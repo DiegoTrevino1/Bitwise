@@ -1,0 +1,253 @@
+{
+  "cache": {
+    "request": [
+      {
+        "book": "Intro to Algorithms",
+        "addr": "110010",
+        "tag": "11",
+        "index": "00",
+        "offset": "10",
+        "difficulty": "beginner",
+        "hints": {
+          "direct": "Focus only on the two green index bits. Convert those two bits to a decimal number — that number is the only valid slot for direct mapping.",
+          "set": "The index bits pick a row, not a specific slot. Convert the two index bits to decimal to find which row number you're targeting.",
+          "associative": "Fully associative has no address-based rules at all. Scan the grid and pick any slot that isn't already holding a book."
+        },
+        "explanation": "Address 110010 → tag=11, index=00, offset=10. Binary 00 = decimal 0. Direct mapping always targets the slot number matching the index (slot 0). Set-associative targets the row matching the index (Row 0, any of slots 0–3). Fully associative lets any empty slot work."
+      },
+      {
+        "book": "Computer Organization",
+        "addr": "001101",
+        "tag": "00",
+        "index": "11",
+        "offset": "01",
+        "difficulty": "beginner",
+        "hints": {
+          "direct": "Two '1' bits in the index position — think about what that value is in decimal. That decimal number is your target slot.",
+          "set": "Both index bits are 1, making this the highest possible index value. Which row number does that correspond to?",
+          "associative": "Address bits don't restrict placement here. Any unoccupied slot in the grid is a legal choice."
+        },
+        "explanation": "Address 001101 → tag=00, index=11, offset=01. Binary 11 = decimal 3. Direct mapping targets slot 3. Set-associative targets Row 3 (slots 12–15). Fully associative allows any empty slot."
+      },
+      {
+        "book": "Digital Design",
+        "addr": "011001",
+        "tag": "01",
+        "index": "10",
+        "offset": "01",
+        "difficulty": "beginner",
+        "hints": {
+          "direct": "The index is a two-bit number. Its decimal value tells you exactly which slot number to use — no calculation beyond that conversion is needed.",
+          "set": "Convert the index to decimal to find the row. Remember: Row 0 holds slots 0–3, Row 1 holds slots 4–7, and so on.",
+          "associative": "In fully associative, any empty cache slot is correct. Look for a slot showing '—' and select it."
+        },
+        "explanation": "Address 011001 → tag=01, index=10, offset=01. Binary 10 = decimal 2. Direct mapping targets slot 2. Set-associative targets Row 2 (slots 8–11). Fully associative allows any empty slot."
+      },
+      {
+        "book": "Operating Systems",
+        "addr": "100101",
+        "tag": "10",
+        "index": "01",
+        "offset": "01",
+        "difficulty": "beginner",
+        "hints": {
+          "direct": "A '0' followed by a '1' in the index — what decimal number is that? Your target slot is that number.",
+          "set": "The index selects a set (row). Once you know the decimal value of the index bits, you know the row — place in any open slot there.",
+          "associative": "No address constraint applies. Just find a slot without a book in it."
+        },
+        "explanation": "Address 100101 → tag=10, index=01, offset=01. Binary 01 = decimal 1. Direct mapping targets slot 1. Set-associative targets Row 1 (slots 4–7). Fully associative allows any empty slot."
+      },
+      {
+        "book": "Data Structures",
+        "addr": "110110",
+        "tag": "11",
+        "index": "01",
+        "offset": "10",
+        "difficulty": "intermediate",
+        "hints": {
+          "direct": "Two books in this round have the same index value. In direct mapping, that means they compete for the exact same slot — a cache conflict. Identify the slot and place accordingly.",
+          "set": "This book's index matches a previous one. In set-associative, both map to the same row, but the row has multiple slots — no conflict yet unless all slots in that row are full.",
+          "associative": "Fully associative avoids conflicts entirely since placement is unrestricted. Any empty slot is valid."
+        },
+        "explanation": "Address 110110 → tag=11, index=01, offset=10. Index 01 = decimal 1, same as 'Operating Systems' (100101). Direct mapping creates a conflict: both must go to slot 1, so the newer entry evicts the older. Set-associative places both in Row 1 with no conflict as long as a slot is open."
+      },
+      {
+        "book": "VLSI Design",
+        "addr": "001010",
+        "tag": "00",
+        "index": "10",
+        "offset": "10",
+        "difficulty": "intermediate",
+        "hints": {
+          "direct": "The tag and offset differ from earlier addresses with the same index — but in direct mapping, only the index matters for placement. What slot does this index point to?",
+          "set": "Same index as 'Digital Design'. Set-associative can hold multiple books per row, so check whether Row 2 still has an open slot before placing.",
+          "associative": "No row or slot restriction — any empty cell works. Check the current state of the grid."
+        },
+        "explanation": "Address 001010 → tag=00, index=10, offset=10. Index 10 = decimal 2. Direct mapping targets slot 2 — same slot as 'Digital Design', causing an eviction if that slot is occupied. Set-associative targets Row 2; as long as a slot in that row is free, both books can coexist."
+      },
+      {
+        "book": "Assembly Language",
+        "addr": "111100",
+        "tag": "11",
+        "index": "11",
+        "offset": "00",
+        "difficulty": "intermediate",
+        "hints": {
+          "direct": "All four index bits... wait, only two bits form the index. When both are '1', what is the maximum decimal value two bits can hold? That's your slot.",
+          "set": "Index 11 is the largest possible 2-bit index. That maps to the last row. Which row number is that, and which slots does it contain?",
+          "associative": "Fully associative means placement is unrestricted. Any open slot in the 4×4 grid is valid."
+        },
+        "explanation": "Address 111100 → tag=11, index=11, offset=00. Binary 11 = decimal 3 (the maximum for 2 bits). Direct mapping targets slot 3. Set-associative targets Row 3 (slots 12–15). Fully associative allows any empty slot."
+      },
+      {
+        "book": "Computer Networks",
+        "addr": "010000",
+        "tag": "01",
+        "index": "00",
+        "offset": "00",
+        "difficulty": "intermediate",
+        "hints": {
+          "direct": "The index is all zeros again — same as 'Intro to Algorithms'. Direct mapping puts both at the same slot. Only one can stay; the latest placement wins.",
+          "set": "Both this book and 'Intro to Algorithms' map to Row 0. Set-associative can hold up to 4 books per row — check if Row 0 still has capacity.",
+          "associative": "In fully associative, prior placements don't restrict where you put this one. Find any open slot."
+        },
+        "explanation": "Address 010000 → tag=01, index=00, offset=00. Index 00 = decimal 0. Direct mapping conflicts with 'Intro to Algorithms' at slot 0 — an eviction occurs. Set-associative places both in Row 0 without conflict, highlighting the advantage of associativity over direct mapping."
+      },
+      {
+        "book": "Database Systems",
+        "addr": "100110",
+        "tag": "10",
+        "index": "01",
+        "offset": "10",
+        "difficulty": "advanced",
+        "hints": {
+          "direct": "This is the third book with index 01. Direct mapping always targets the same single slot — that slot has been overwritten twice already. Think about what eviction means for cache performance.",
+          "set": "Row 1 may already contain 'Operating Systems' and 'Data Structures'. Count how many slots in Row 1 are occupied — a set-associative cache evicts only when the entire set (row) is full.",
+          "associative": "With three books competing for the same row in other modes, fully associative shines — just place in any remaining empty slot."
+        },
+        "explanation": "Address 100110 → tag=10, index=01, offset=10. Index 01 = decimal 1 — the third book targeting slot 1 (direct) or Row 1 (set-associative). This demonstrates thrashing in direct-mapped caches: three distinct tags fighting for one slot causes repeated evictions, while set-associative handles all three in the same row without conflict."
+      },
+      {
+        "book": "Compiler Design",
+        "addr": "011100",
+        "tag": "01",
+        "index": "11",
+        "offset": "00",
+        "difficulty": "advanced",
+        "hints": {
+          "direct": "Index 11 maps to the same slot as 'Assembly Language'. The tag is different, so this is a cache miss — a new book must evict the previous occupant of that slot.",
+          "set": "Row 3 may already hold 'Computer Organization' and 'Assembly Language'. Set-associative can hold both because they go in different slots within the row — check how many slots remain.",
+          "associative": "Any empty slot works. Note that this book has the same index as two others — in direct mapping that would cause evictions, but not here."
+        },
+        "explanation": "Address 011100 → tag=01, index=11, offset=00. Index 11 = decimal 3. This is the third book targeting index 3. Direct mapping evicts 'Assembly Language' from slot 3. Set-associative places it in Row 3 alongside the others if capacity allows, illustrating how associativity reduces conflict misses."
+      },
+      {
+        "book": "Embedded Systems",
+        "addr": "001000",
+        "tag": "00",
+        "index": "10",
+        "offset": "00",
+        "difficulty": "advanced",
+        "hints": {
+          "direct": "Index 10 has appeared on multiple books now. In direct mapping, each new arrival at this index evicts the previous one — trace which book currently occupies slot 2.",
+          "set": "Row 2 may hold 'Digital Design' and 'VLSI Design' already. A 4-way set-associative row fits four books — is Row 2 full, or is there still a slot available?",
+          "associative": "Unrestricted placement: scan the grid and pick any open slot. No eviction required unless the entire cache is full."
+        },
+        "explanation": "Address 001000 → tag=00, index=10, offset=00. Index 10 = decimal 2 — a third book targeting the same row. In direct mapping, slot 2 has already been contested by 'Digital Design' and 'VLSI Design'; this placement evicts whoever is currently there. In set-associative, Row 2 holds up to 4 books, so this may fit without eviction."
+      },
+      {
+        "book": "Logic Design",
+        "addr": "110011",
+        "tag": "11",
+        "index": "00",
+        "offset": "11",
+        "difficulty": "advanced",
+        "hints": {
+          "direct": "Index 00 again — same as 'Intro to Algorithms' and 'Computer Networks'. Slot 0 has been overwritten multiple times. This placement will evict whichever book currently occupies slot 0.",
+          "set": "Row 0 has been used by two books so far. A 4-way set-associative cache can hold four books in a row — check how many slots in Row 0 are still open before placing.",
+          "associative": "No constraints on placement. With Row 0 congested in other modes, fully associative distributes load freely — find any unoccupied slot."
+        },
+        "explanation": "Address 110011 → tag=11, index=00, offset=11. Index 00 = decimal 0 — the third book mapping to index 0. Direct mapping at slot 0 causes yet another eviction, demonstrating the fragility of direct-mapped caches under workloads with poor index distribution. Set-associative and fully associative handle this gracefully by offering multiple placement options."
+      }
+    ]
+  },
+  "spell": {
+    "enemy": [
+      {
+        "name": "Binary Banshee",
+        "icon": "👻",
+        "desc": "Casts spells as binary values. Counter with a bitwise NOT.",
+        "difficulty": "easy",
+        "hp": 80,
+        "color": "#63b3ed",
+        "challenge": {
+          "display": "0x6A  (binary: 0110 1010)",
+          "binary": "01101010",
+          "hex": "6A",
+          "op": "Bitwise NOT (~) — flip every bit",
+          "answer": "95",
+          "answerBin": "10010101"
+        }
+      },
+      {
+        "name": "Hex Hydra",
+        "icon": "🐉",
+        "desc": "Attacks with hex values. Counter by XORing with 0xFF.",
+        "difficulty": "medium",
+        "hp": 100,
+        "color": "#b794f4",
+        "challenge": {
+          "display": "0xA3  (binary: 1010 0011)",
+          "binary": "10100011",
+          "hex": "A3",
+          "op": "XOR with 0xFF",
+          "answer": "5C",
+          "answerBin": "01011100"
+        }
+      },
+      {
+        "name": "Decimal Dragon",
+        "icon": "🔥",
+        "desc": "Attacks with decimal values. Counter by adding 1 (8-bit overflow applies).",
+        "difficulty": "hard",
+        "hp": 120,
+        "color": "#fc8181",
+        "challenge": {
+          "display": "0x4F  (decimal: 79)",
+          "binary": "01001111",
+          "hex": "4F",
+          "op": "Add 1 (+1), keep result in 8 bits",
+          "answer": "50",
+          "answerBin": "01010000"
+        }
+      }
+    ],
+    "pretest": [
+      {
+        "q": "What is binary 1010 in decimal?",
+        "opts": ["8", "10", "12", "14"],
+        "correct": 1
+      },
+      {
+        "q": "What is 0xFF in decimal?",
+        "opts": ["127", "255", "256", "128"],
+        "correct": 1
+      },
+      {
+        "q": "What is decimal 16 in hexadecimal?",
+        "opts": ["0F", "10", "1F", "20"],
+        "correct": 1
+      },
+      {
+        "q": "What does the bitwise NOT (~) operation do to a binary number?",
+        "opts": ["Adds 1 to each bit", "Flips every bit (0→1 and 1→0)", "Shifts all bits left by one", "Sets all bits to zero"],
+        "correct": 1
+      },
+      {
+        "q": "What is 0b11110000 in hexadecimal?",
+        "opts": ["E0", "F0", "0F", "1F"],
+        "correct": 1
+      }
+    ]
+  }
+}

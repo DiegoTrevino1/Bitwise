@@ -1,0 +1,41 @@
+[
+  {
+    "id": "cache",
+    "title": "Library Cache",
+    "tag": "Cache Mapping",
+    "icon": "📚",
+    "color": "#63b3ed",
+    "colorDim": "rgba(99,179,237,0.12)",
+    "colorBorder": "rgba(99,179,237,0.3)",
+    "description": "Map memory addresses to cache slots using direct-mapped, set-associative, and fully associative strategies.",
+    "badges": ["Direct Mapped", "Set Associative", "Fully Associative"],
+    "status": "playable",
+    "sortOrder": 0
+  },
+  {
+    "id": "spell",
+    "title": "Spell Counter",
+    "tag": "Number Systems",
+    "icon": "🔢",
+    "color": "#b794f4",
+    "colorDim": "rgba(183,148,244,0.12)",
+    "colorBorder": "rgba(183,148,244,0.3)",
+    "description": "Counter enemy spells by applying bitwise operations. Wrong bits cost you HP — precision matters.",
+    "badges": ["Bitwise NOT", "XOR", "Bit Accuracy"],
+    "status": "playable",
+    "sortOrder": 1
+  },
+  {
+    "id": "convert",
+    "title": "Number Base Drill",
+    "tag": "Base Conversion",
+    "icon": "⚡",
+    "color": "#68d391",
+    "colorDim": "rgba(104,211,145,0.12)",
+    "colorBorder": "rgba(104,211,145,0.3)",
+    "description": "Convert between binary, decimal, and hex before the timer runs out. Speed bonus rewards fast answers.",
+    "badges": ["Timed", "Speed Bonus", "8-bit"],
+    "status": "playable",
+    "sortOrder": 2
+  }
+]
