@@ -1,0 +1,581 @@
+import "./App.css";
+import { useEffect, useState, useCallback } from "react";
+import LoginPage from "./LoginPage";
+import LibraryCacheGame from "./LibraryCacheGame";
+import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress } from "./api";
+
+/* ─── AVATAR ─────────────────────────────────────────── */
+const PALETTE = [
+  "#0057ff","#8b5cf6","#22c55e","#f59e0b","#ef4444","#06b6d4","#f97316","#ec4899",
+];
+function avatarColor(name) {
+  if (!name) return PALETTE[0];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+function initials(name) { return (name || "??").slice(0, 2).toUpperCase(); }
+
+function Avatar({ name, size = 28 }) {
+  return (
+    <div className="bw-lb-avatar" style={{ width: size, height: size, background: avatarColor(name), fontSize: size * 0.38 }}>
+      {initials(name)}
+    </div>
+  );
+}
+
+/* ─── MODES CONFIG ───────────────────────────────────── */
+const MODES = [
+  {
+    id: "direct",
+    label: "Direct Mapping",
+    tag: "Mode 1 · Beginner",
+    color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
+    desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
+    bits: [
+      { part: "tag",    cls: "bw-bit-tag",    role: "Verify correct data is loaded — miss if tags don't match" },
+      { part: "index",  cls: "bw-bit-index",  role: "Points to the exact cache line (one line only)" },
+      { part: "offset", cls: "bw-bit-offset", role: "Which byte within that cache line" },
+    ],
+  },
+  {
+    id: "set",
+    label: "Set-Associative",
+    tag: "Mode 2 · Intermediate",
+    color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
+    desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
+    bits: [
+      { part: "tag",    cls: "bw-bit-tag",    role: "Identify which row within the set — miss if no tags match" },
+      { part: "set",    cls: "bw-bit-set",    role: "Which set of lines this address belongs to" },
+      { part: "offset", cls: "bw-bit-offset", role: "Which byte within the cache line" },
+    ],
+  },
+  {
+    id: "associative",
+    label: "Fully Associative",
+    tag: "Mode 3 · Advanced",
+    color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
+    desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
+    bits: [
+      { part: "tag",    cls: "bw-bit-tag",    role: "Compare ALL lines — miss if no stored tag matches" },
+      { part: "offset", cls: "bw-bit-offset", role: "Which byte within the cache line" },
+    ],
+  },
+];
+
+/* ─── DUMMY LEADERBOARD / ACTIVITY DATA ──────────────── */
+// Used when the backend isn't running so the UI still looks populated
+const DUMMY_LB = [
+  { rank: 1, username: "alex_k",  totalXp: 8240, color: "#0057ff" },
+  { rank: 2, username: "maya_r",  totalXp: 6420, color: "#8b5cf6" },
+  { rank: 3, username: "j_liu",   totalXp: 5010, color: "#f59e0b" },
+];
+const DUMMY_ACT = [
+  { id: 1, username: "alex_k",  modeLabel: "Direct Mapping",     xpEarned: 420, accuracy: .96, ts: 120   },
+  { id: 2, username: "maya_r",  modeLabel: "Set-Associative",    xpEarned: 310, accuracy: .88, ts: 840   },
+  { id: 3, username: "j_liu",   modeLabel: "Direct Mapping",     xpEarned: 280, accuracy: .82, ts: 1860  },
+];
+
+function fmtTime(secsAgo) {
+  if (secsAgo < 60)   return `${secsAgo}s ago`;
+  if (secsAgo < 3600) return `${Math.floor(secsAgo / 60)}m ago`;
+  return `${Math.floor(secsAgo / 3600)}h ago`;
+}
+function fmtNum(n) { return typeof n === "number" ? n.toLocaleString() : "—"; }
+
+/* ═══════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════ */
+export default function App() {
+  const [view,       setView]       = useState("home"); // home | auth | game
+  const [activeMode, setActiveMode] = useState(null);
+
+  // Auth
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user,       setUser]       = useState(null);
+
+  // Remote data
+  const [stats,    setStats]    = useState(null);
+  const [lbRows,   setLbRows]   = useState(DUMMY_LB);
+  const [activity, setActivity] = useState(DUMMY_ACT);
+
+  // Local progress (persisted in localStorage so it survives refresh)
+  const [preScore,  setPreScore]  = useState(() => {
+    const v = localStorage.getItem("bw_pre_score");
+    return v !== null ? parseInt(v, 10) : null;
+  });
+  const [postScore, setPostScore] = useState(() => {
+    const v = localStorage.getItem("bw_post_score");
+    return v !== null ? parseInt(v, 10) : null;
+  });
+  const [modeProgress, setModeProgress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("bw_mode_progress") || "{}"); }
+    catch { return {}; }
+  });
+
+  const preDone  = preScore  !== null;
+  const postDone = postScore !== null;
+  const allModesComplete = MODES.every(m => modeProgress[m.id]?.complete);
+
+  // Persist progress
+  useEffect(() => {
+    if (preScore  !== null) localStorage.setItem("bw_pre_score",  preScore);
+  }, [preScore]);
+  useEffect(() => {
+    if (postScore !== null) localStorage.setItem("bw_post_score", postScore);
+  }, [postScore]);
+  useEffect(() => {
+    localStorage.setItem("bw_mode_progress", JSON.stringify(modeProgress));
+  }, [modeProgress]);
+
+  // Auth check
+  useEffect(() => {
+    if (!hasToken()) return;
+    apiFetch("/auth/me")
+      .then(u => { setUser(u); setIsLoggedIn(true); })
+      .catch(() => clearToken());
+  }, []);
+
+  // Stats + leaderboard + activity
+  const loadRemote = useCallback(() => {
+    getStatsOverview().then(setStats).catch(() => {});
+    apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {});
+    getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadRemote(); }, [loadRemote]);
+
+  // XP sum
+  const totalXp = Object.values(modeProgress).reduce((s, m) => s + (m.bestXp || 0), 0);
+
+  // Mode unlock logic
+  const modeUnlocked = (modeId) => {
+    if (!preDone) return false;
+    if (modeId === "direct")      return true;
+    if (modeId === "set")         return !!modeProgress["direct"]?.complete;
+    if (modeId === "associative") return !!modeProgress["set"]?.complete;
+    return false;
+  };
+
+  const handleGameFinish = (modeId, score, accuracy) => {
+    const prev = modeProgress[modeId] || {};
+    const bestXp = Math.max(prev.bestXp || 0, score);
+    const updated = {
+      ...modeProgress,
+      [modeId]: { ...prev, bestXp, plays: (prev.plays || 0) + 1, accuracy, complete: true },
+    };
+    setModeProgress(updated);
+    postProgress({ gameId: "cache", modeId, score, accuracy, xpEarned: score }).catch(() => {});
+    loadRemote();
+    setView("home");
+    setActiveMode(null);
+  };
+
+  const handleLogout = () => {
+    clearToken(); setIsLoggedIn(false); setUser(null); setView("home");
+  };
+
+  /* ── GAME VIEW ── */
+  if (view === "game" && activeMode) {
+    return (
+      <LibraryCacheGame
+        initialMode={activeMode}
+        onBack={() => { setView("home"); setActiveMode(null); }}
+        onHome={() => { setView("home"); setActiveMode(null); }}
+        onComplete={(score, accuracy) => handleGameFinish(activeMode, score, accuracy)}
+      />
+    );
+  }
+
+  /* ── AUTH VIEW ── */
+  if (view === "auth") {
+    return (
+      <LoginPage
+        onBack={() => setView("home")}
+        onLoginSuccess={(u) => {
+          setUser(u); setIsLoggedIn(true); setView("home");
+        }}
+      />
+    );
+  }
+
+  /* ── HOME VIEW ── */
+  const top1Xp = lbRows[0]?.totalXp || 1;
+  const myLbRow = isLoggedIn ? lbRows.find(r => r.username === user?.username) : null;
+
+  return (
+    <>
+      {/* NAV */}
+      <nav className="bw-nav">
+        <div className="bw-logo">
+          <div className="bw-logo-icon">⚡</div>
+          <div>
+            <div className="bw-logo-name">Bitwise</div>
+            <div className="bw-logo-sub">CWU · Computer Architecture</div>
+          </div>
+        </div>
+        <div className="bw-nav-right">
+          {isLoggedIn ? (
+            <>
+              {totalXp > 0 && (
+                <div className="bw-nav-pill bw-nav-pill-xp">⭐ {fmtNum(totalXp)} XP</div>
+              )}
+              <div className="bw-user-pill">
+                <div className="bw-user-avatar" style={{ background: avatarColor(user?.username) }}>
+                  {initials(user?.username)}
+                </div>
+                <span className="bw-user-name">@{user?.username}</span>
+              </div>
+              <button className="bw-btn bw-btn-outline" onClick={handleLogout}>Log out</button>
+            </>
+          ) : (
+            <>
+              <button className="bw-btn bw-btn-outline"  onClick={() => setView("auth")}>Log in</button>
+              <button className="bw-btn bw-btn-primary"  onClick={() => setView("auth")}>Get started</button>
+            </>
+          )}
+        </div>
+      </nav>
+
+      <main className="bw-page">
+
+        {/* HERO */}
+        <div className="bw-hero">
+          <div>
+            <h1>Learn cache mapping.<br />By actually doing it.</h1>
+            <p>Take a short pre-assessment, then play through three cache mapping modes — direct, set-associative, and fully associative. Retake the quiz after to see how much you learned.</p>
+            <div className="bw-hero-btns">
+              {!preDone
+                ? <button className="bw-btn-hero-white" onClick={() => alert("Pre-assessment coming soon!")}>Take pre-assessment →</button>
+                : <button className="bw-btn-hero-white" onClick={() => { const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete); if (m) { setActiveMode(m.id); setView("game"); } }}>
+                    {allModesComplete ? "Replay a mode →" : "Continue playing →"}
+                  </button>
+              }
+              <button className="bw-btn-hero-outline" onClick={() => document.getElementById("bw-lb")?.scrollIntoView({ behavior: "smooth" })}>
+                View leaderboard
+              </button>
+            </div>
+          </div>
+          <div className="bw-hero-icon">🖥️</div>
+        </div>
+
+        {/* STATS */}
+        <div className="bw-stat-row">
+          <div className="bw-stat-chip">
+            <div className="bw-stat-chip-icon">🎮</div>
+            <div className="bw-stat-chip-val">{stats ? fmtNum(stats.plays) : "—"}</div>
+            <div className="bw-stat-chip-lbl">Games completed</div>
+          </div>
+          <div className="bw-stat-chip">
+            <div className="bw-stat-chip-icon">⭐</div>
+            <div className="bw-stat-chip-val">{stats ? fmtNum(stats.totalXp) : "—"}</div>
+            <div className="bw-stat-chip-lbl">XP awarded</div>
+          </div>
+          <div className="bw-stat-chip">
+            <div className="bw-stat-chip-icon">🎯</div>
+            <div className="bw-stat-chip-val">{stats?.avgAccuracy != null ? `${Math.round(stats.avgAccuracy * 100)}%` : "—"}</div>
+            <div className="bw-stat-chip-lbl">Avg accuracy</div>
+          </div>
+        </div>
+
+        {/* HOW IT WORKS */}
+        <div className="bw-section-head" style={{ marginBottom: 12 }}>
+          <div className="bw-section-title">How Bitwise works</div>
+        </div>
+        <div className="bw-how-grid">
+          <div className="bw-how-card">
+            <div className="bw-how-icon" style={{ background: "#fef3c7", borderColor: "#fbbf24" }}>📋</div>
+            <div className="bw-how-title">1. Pre-assessment</div>
+            <div className="bw-how-desc">A short quiz measuring what you already know about cache mapping. Your score is saved for comparison.</div>
+          </div>
+          <div className="bw-how-card">
+            <div className="bw-how-icon" style={{ background: "#f0fdf4", borderColor: "#86efac" }}>🎮</div>
+            <div className="bw-how-title">2. Play the game</div>
+            <div className="bw-how-desc">Work through three cache mapping modes — direct, set-associative, and fully associative. Learn by doing.</div>
+          </div>
+          <div className="bw-how-card">
+            <div className="bw-how-icon" style={{ background: "#eff6ff", borderColor: "#93c5fd" }}>🏆</div>
+            <div className="bw-how-title">3. Post-assessment</div>
+            <div className="bw-how-desc">Retake the same quiz after playing. Compare your scores to see exactly how much the game taught you.</div>
+          </div>
+        </div>
+
+        {/* STEP 1 — PRE-ASSESSMENT */}
+        <div className="bw-step-row">
+          <div className={`bw-step-num ${preDone ? "bw-step-num-done" : "bw-step-num-active"}`}>
+            {preDone ? "✓" : "1"}
+          </div>
+          <div className={`bw-step-label ${preDone ? "bw-step-label-done" : "bw-step-label-active"}`}>
+            {preDone ? "Pre-assessment complete" : "Start here — take the pre-assessment"}
+          </div>
+        </div>
+
+        {preDone ? (
+          <div className="bw-pre-done">
+            <div className="bw-pre-done-icon">✅</div>
+            <div>
+              <div className="bw-pre-done-text">Pre-assessment complete — {preScore}/10</div>
+              <div className="bw-pre-done-sub">Games are unlocked. Complete all three modes to unlock the post-assessment.</div>
+            </div>
+          </div>
+        ) : (
+          <div className="bw-pre-banner">
+            <div className="bw-pre-icon">📋</div>
+            <div className="bw-pre-body">
+              <div className="bw-pre-title">Pre-assessment — 10 questions · ~5 min</div>
+              <div className="bw-pre-sub">Tests your existing knowledge of cache mapping. Your score is saved and compared to your post-assessment after playing — so you can see exactly how much you learned.</div>
+            </div>
+            <button className="bw-btn-pre" onClick={() => alert("Pre-assessment coming soon!")}>
+              Start quiz →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2 — GAME MODES */}
+        <div className="bw-step-row">
+          <div className={`bw-step-num ${preDone ? "bw-step-num-active" : "bw-step-num-locked"}`}>2</div>
+          <div className={`bw-step-label ${preDone ? "bw-step-label-active" : "bw-step-label-locked"}`}>
+            Play the game — three cache mapping modes
+            {preDone && <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400, marginLeft: 8 }}>Complete in order to unlock the next</span>}
+          </div>
+        </div>
+
+        <div className="bw-mode-grid">
+          {MODES.map((mode) => {
+            const unlocked = modeUnlocked(mode.id);
+            const prog     = modeProgress[mode.id];
+            const done     = !!prog?.complete;
+            return (
+              <div
+                key={mode.id}
+                className={`bw-mode-card ${!unlocked ? "bw-mode-locked" : ""}`}
+                style={{ background: mode.colorLight, borderColor: mode.colorBorder }}
+              >
+                <div className="bw-mode-badge" style={{ color: mode.color, borderColor: mode.colorBorder, background: "#fff" }}>
+                  {done ? "✓ " : ""}{mode.tag}
+                </div>
+                <div className="bw-mode-title" style={{ color: mode.colorDark }}>{mode.label}</div>
+                <div className="bw-mode-desc"  style={{ color: mode.colorDark, opacity: .75 }}>{mode.desc}</div>
+                <div className="bw-mode-bits">
+                  {mode.bits.map(b => (
+                    <div key={b.part} className="bw-mode-bit-row">
+                      <span className={`bw-bit-badge ${b.cls}`}>{b.part}</span>
+                      <span style={{ color: mode.colorDark, opacity: .7 }}>{b.role}</span>
+                    </div>
+                  ))}
+                </div>
+                {unlocked ? (
+                  <button
+                    className="bw-mode-play-btn"
+                    style={{ background: mode.color }}
+                    onClick={() => { setActiveMode(mode.id); setView("game"); }}
+                  >
+                    {done ? "↺ Replay" : "▶ Play now"}
+                  </button>
+                ) : (
+                  <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color }}>
+                    🔒 {mode.id === "set" ? "Complete Mode 1 to unlock" : "Complete Mode 2 to unlock"}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* STEP 3 — POST-ASSESSMENT */}
+        <div className="bw-step-row">
+          <div className={`bw-step-num ${postDone ? "bw-step-num-done" : "bw-step-num-locked"}`}>
+            {postDone ? "✓" : "3"}
+          </div>
+          <div className={`bw-step-label ${postDone ? "bw-step-label-done" : "bw-step-label-locked"}`}>
+            Post-assessment — {allModesComplete ? "ready to take!" : "unlocks after completing all three modes"}
+          </div>
+        </div>
+
+        <div className="bw-post-strip" style={{ opacity: allModesComplete ? 1 : .65 }}>
+          <div className="bw-post-strip-icon">🏆</div>
+          <div className="bw-post-strip-body">
+            <div className="bw-post-strip-title">
+              {postDone ? "Post-assessment complete!" : "Post-assessment"}
+            </div>
+            <div className="bw-post-strip-sub">
+              {postDone
+                ? `You scored ${postScore}/10 — compare with your pre-assessment score of ${preScore}/10`
+                : "Retake the same quiz after playing — your improvement score shows exactly what the game taught you"}
+            </div>
+          </div>
+          {allModesComplete && !postDone
+            ? <button className="bw-btn-pre" onClick={() => alert("Post-assessment coming soon!")}>Start →</button>
+            : <div className="bw-post-strip-badge">
+                {postDone ? `+${postScore - preScore} improvement` : allModesComplete ? "Ready!" : `${Object.keys(modeProgress).filter(k => modeProgress[k]?.complete).length} of 3 done`}
+              </div>
+          }
+        </div>
+
+        {/* PROGRESS (only when logged in or there's local data) */}
+        {(isLoggedIn || Object.keys(modeProgress).length > 0) && (
+          <>
+            <div className="bw-progress-title">Your progress</div>
+
+            {/* Rank hero */}
+            {myLbRow && (
+              <div className="bw-rank-hero">
+                <div className="bw-rank-box">
+                  <div className="bw-rank-num">#{myLbRow.rank}</div>
+                  <div className="bw-rank-lbl">RANK</div>
+                </div>
+                <div className="bw-rank-text">
+                  <div className="bw-rank-title">You're rank #{myLbRow.rank}!</div>
+                  <div className="bw-rank-sub">
+                    {myLbRow.rank === 1 ? "👑 You're leading the class." : `${fmtNum(lbRows[myLbRow.rank - 2]?.totalXp - myLbRow.totalXp)} XP from rank #${myLbRow.rank - 1}.`}
+                  </div>
+                </div>
+                <button className="bw-btn-keep-playing" onClick={() => { const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete); if (m) { setActiveMode(m.id); setView("game"); } }}>
+                  Keep playing →
+                </button>
+              </div>
+            )}
+
+            {/* Assessment comparison */}
+            {(preDone || postDone) && (
+              <div className="bw-assess-row">
+                <div className="bw-assess-cell">
+                  <div className="bw-assess-lbl">📋 Pre-assessment</div>
+                  <div className="bw-assess-val" style={{ color: "#f59e0b" }}>{preScore !== null ? `${preScore}/10` : "—"}</div>
+                  <div className="bw-assess-sub">{preDone ? "Completed" : "Not taken"}</div>
+                </div>
+                <div className="bw-assess-cell" style={{ background: "#f9fafb" }}>
+                  <div className="bw-assess-lbl">🎮 Modes done</div>
+                  <div className="bw-assess-val" style={{ color: "#8b5cf6" }}>
+                    {Object.values(modeProgress).filter(m => m?.complete).length} / 3
+                  </div>
+                  <div className="bw-assess-sub">{totalXp > 0 ? `${fmtNum(totalXp)} XP total` : "Not started"}</div>
+                </div>
+                <div className="bw-assess-cell" style={{ opacity: postDone ? 1 : .5 }}>
+                  <div className="bw-assess-lbl">🏆 Post-assessment</div>
+                  <div className="bw-assess-val" style={{ color: "#22c55e" }}>{postScore !== null ? `${postScore}/10` : "—"}</div>
+                  <div className="bw-assess-sub">{postDone ? "Completed" : "Not yet unlocked"}</div>
+                </div>
+                {postDone && preScore !== null && (
+                  <div className="bw-assess-improvement" style={{ gridColumn: "1/-1" }}>
+                    📈 You improved by {postScore - preScore} points after playing the games. Great work!
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Per-mode scores */}
+            {Object.keys(modeProgress).length > 0 && (
+              <div className="bw-mode-prog-card">
+                {MODES.map(mode => {
+                  const prog = modeProgress[mode.id];
+                  if (!prog) return null;
+                  const maxXp = 1000; // 10 questions × 100 XP
+                  const pct = Math.min(100, Math.round((prog.bestXp || 0) / maxXp * 100));
+                  return (
+                    <div key={mode.id} className="bw-mode-prog-row">
+                      <div className="bw-mp-top">
+                        <div className="bw-mp-icon" style={{ background: mode.colorLight, borderColor: mode.colorBorder }}>
+                          {mode.id === "direct" ? "🗂️" : mode.id === "set" ? "📚" : "🔓"}
+                        </div>
+                        <div className="bw-mp-info">
+                          <div className="bw-mp-title">{mode.label}</div>
+                          <div className="bw-mp-sub">{prog.plays || 0} plays · best score counts</div>
+                        </div>
+                        <div className="bw-mp-score">
+                          <div className="bw-mp-xp" style={{ color: mode.color }}>{fmtNum(prog.bestXp || 0)} XP</div>
+                          <div className="bw-mp-xp-sub">best run</div>
+                        </div>
+                      </div>
+                      <div className="bw-mp-track">
+                        <div className="bw-mp-fill" style={{ width: `${pct}%`, background: mode.color }} />
+                      </div>
+                      <div className="bw-mp-meta">
+                        <span className="bw-mp-badge" style={{ background: mode.colorLight, color: mode.colorDark, borderColor: mode.colorBorder }}>
+                          🎯 {prog.accuracy != null ? `${Math.round(prog.accuracy * 100)}%` : "—"} accuracy
+                        </span>
+                        {prog.complete && (
+                          <span className="bw-mp-badge" style={{ background: "#f0fdf4", color: "#14532d", borderColor: "#86efac" }}>
+                            ✓ Complete
+                          </span>
+                        )}
+                        <button className="bw-retry-btn" onClick={() => { setActiveMode(mode.id); setView("game"); }}>
+                          ↺ Retry
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* LEADERBOARD + ACTIVITY */}
+        <div className="bw-bottom-grid" id="bw-lb">
+          <div>
+            <div className="bw-section-head">
+              <div className="bw-section-title">Class leaderboard</div>
+              <div className="bw-section-sub">{stats ? `${fmtNum(stats.users || lbRows.length)} students` : ""}</div>
+            </div>
+            <div className="bw-panel">
+              <div className="bw-panel-head">
+                <span className="bw-panel-title">TOP STUDENTS</span>
+                <span className="bw-panel-meta">by XP earned</span>
+              </div>
+              {lbRows.map((r, idx) => {
+                const isMe = isLoggedIn && user?.username === r.username;
+                const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${r.rank || idx + 1}`;
+                return (
+                  <div key={r.rank || idx} className={`bw-lb-row ${isMe ? "bw-lb-me" : ""}`}>
+                    <div className="bw-lb-rank">{medal}</div>
+                    <Avatar name={r.username} size={28} />
+                    <div className="bw-lb-name">
+                      {r.username}
+                      {isMe && <span className="bw-lb-you">YOU</span>}
+                    </div>
+                    <div className="bw-lb-bar">
+                      <div className="bw-lb-fill" style={{ width: `${Math.round((r.totalXp / top1Xp) * 100)}%`, background: avatarColor(r.username) }} />
+                    </div>
+                    <div className="bw-lb-xp">{fmtNum(r.totalXp)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="bw-section-head">
+              <div className="bw-section-title">Recent plays</div>
+            </div>
+            <div className="bw-panel">
+              <div className="bw-panel-head">
+                <span className="bw-panel-title">LIVE FEED</span>
+                <span className="bw-panel-meta"><span className="bw-live-dot" /> Live</span>
+              </div>
+              {activity.map((a, i) => (
+                <div key={a.id || i} className="bw-act-row">
+                  <Avatar name={a.username} size={28} />
+                  <div style={{ flex: 1 }}>
+                    <div className="bw-act-name">@{a.username}</div>
+                    <div className="bw-act-meta">
+                      {a.modeLabel || "Cache"} · {Math.round((a.accuracy || 0) * 100)}% acc · {fmtTime(a.ts || a.secsAgo || 0)}
+                    </div>
+                  </div>
+                  <div className="bw-act-xp">+{fmtNum(a.xpEarned)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* TIP */}
+        <div className="bw-tip">
+          <div className="bw-tip-icon">💡</div>
+          <span>XP is based on your <strong>best run</strong> — replaying a mode can only help your score. Complete all three modes to unlock the post-assessment and see your improvement.</span>
+        </div>
+
+      </main>
+    </>
+  );
+}
