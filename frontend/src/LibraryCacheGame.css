@@ -123,6 +123,20 @@
 .lcg-dot-selected { background: #eff6ff; border-color: #3b82f6; }
 .lcg-dot-answer   { background: #f0fdf4; border-color: #22c55e; }
 
+/* Direct-mode offsets */
+.lcg-td-offsets { display: flex; gap: 8px; align-items: center; }
+.lcg-offset-btn { padding: 6px 8px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.lcg-offset-btn:hover { background: #f9fafb; }
+.lcg-offset-selected { background: #eff6ff; border-color: #3b82f6; }
+.lcg-offset-correct { background: #f0fdf4; border-color: #22c55e; }
+.lcg-offset-answer  { background: #f0fdf4; border-color: #22c55e; }
+
+/* Cache miss button */
+.lcg-miss-btn { margin-top: 8px; width: 100%; padding: 10px 12px; border-radius: 12px; border: 2px solid #f3f4f6; background: #fff; color: #6b7280; cursor: pointer; font-weight: 700; }
+.lcg-miss-selected { background: #fff7ed; border-color: #fcd34d; color: #92400e; }
+.lcg-miss-answer   { background: #f0fdf4; border-color: #86efac; color: #14532d; }
+.lcg-miss-wrong    { background: #fff1f2; border-color: #fecaca; color: #7f1d1d; }
+
 .lcg-summary-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
 .lcg-summary-card { background: var(--mcl); border: 2px solid var(--mcb); border-radius: 24px; padding: 36px 40px; text-align: center; max-width: 440px; width: 100%; }
 .lcg-summary-icon { font-size: 48px; margin-bottom: 14px; }
