@@ -103,40 +103,113 @@ The database is created automatically at `backend/data/app.db` on first run. Que
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18 or newer
 - npm
+- A browser for the frontend (Chrome, Safari, Firefox, Edge)
 
-### 1 — Backend
+### 1 — Backend setup
+
+1. Open a terminal and make sure your current working directory is the `backend/` folder:
 
 ```bash
 cd backend
+```
+
+2. Install backend dependencies from inside `backend/`:
+
+```bash
 npm install
 ```
 
-Create `backend/.env` with the following values:
+3. Create `backend/.env` with these values:
 
-```
+```env
 PORT=4000
 JWT_SECRET=replace-me-with-a-long-random-string
 DB_PATH=./data/app.db
 CORS_ORIGIN=http://localhost:5173
 ```
 
+- `JWT_SECRET` must be a long random string.
+- `DB_PATH` points to the local SQLite file.
+- `CORS_ORIGIN` should match the frontend dev server URL.
+
+4. Start the backend server in development mode:
+
 ```bash
-npm run dev        # starts on http://localhost:4000
+npm run dev
 ```
 
-The database and seed data are created automatically on first start.
+The backend will start on `http://localhost:4000` by default.
 
-### 2 — Frontend
+5. Confirm the backend is healthy:
+
+```bash
+curl http://localhost:4000/api/health
+```
+
+You should see:
+
+```json
+{ "ok": true }
+```
+
+> If the server does not start, check that `JWT_SECRET` is set in `backend/.env` and that `node_modules/` is installed.
+
+### 2 — Frontend setup
+
+1. Open a second terminal and make sure your current working directory is the `frontend/` folder:
 
 ```bash
 cd frontend
-npm install
-npm run dev        # starts on http://localhost:5173
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The frontend talks to the backend at `http://localhost:4000/api`. If the backend isn't running, the home page still renders with placeholder leaderboard and activity data.
+2. Install frontend dependencies from inside `frontend/`:
+
+```bash
+npm install
+```
+
+3. Start the frontend dev server:
+
+```bash
+npm run dev
+```
+
+The frontend will start on `http://localhost:5173`.
+
+### 3 — Open the application
+
+Open your browser at:
+
+```bash
+http://localhost:5173
+```
+
+The frontend is configured to call the backend API at:
+
+```bash
+http://localhost:4000/api
+```
+
+### 4 — Verify end-to-end
+
+- Backend: `http://localhost:4000/api/health`
+- Frontend: `http://localhost:5173`
+
+If the backend is not running, the UI will still display placeholder leaderboard and activity cards, but real account/login and progress features will not work.
+
+### 5 — Common issues
+
+- If `npm install` fails, confirm your Node version with:
+
+```bash
+node -v
+```
+
+- If the backend reports CORS errors, verify `CORS_ORIGIN` in `backend/.env` matches the frontend URL.
+
+- If the frontend cannot contact the API, make sure both servers are running and check the browser console for network errors.
 
 ---
 

@@ -14,19 +14,36 @@ data model, conventions), see [ARCHITECTURE.md](./ARCHITECTURE.md).
 - bcrypt + JWT (`jsonwebtoken`) for auth
 - `dotenv` for configuration, `nodemon` for dev
 
-## Quick start
+## Setup and run
+
+1. Install dependencies:
 
 ```sh
-cp .env.example .env        # then set JWT_SECRET to a long random string
 npm install
-npm run dev                 # nodemon — restarts on changes
-# or
-npm start                   # plain node server.js
 ```
 
-The server listens on `http://localhost:4000` by default. The SQLite
-database file (`./data/app.db`) and its directory are created on first
-boot.
+2. Create a new `.env` file in the backend folder with these values:
+
+```env
+PORT=4000
+JWT_SECRET=replace-me-with-a-long-random-string
+DB_PATH=./data/app.db
+CORS_ORIGIN=http://localhost:5173
+```
+
+3. Start the backend server in development mode:
+
+```sh
+npm run dev
+```
+
+4. Or start production-style with:
+
+```sh
+npm start
+```
+
+The server listens on `http://localhost:4000` by default. The SQLite database file (`./data/app.db`) and its directory are created automatically on first boot.
 
 ### Health check
 
@@ -37,7 +54,7 @@ curl http://localhost:4000/api/health
 
 ## Configuration
 
-Set in `.env` (see `.env.example`):
+Set these values in `backend/.env`:
 
 | Var           | Default                  | Notes                                |
 | ------------- | ------------------------ | ------------------------------------ |
