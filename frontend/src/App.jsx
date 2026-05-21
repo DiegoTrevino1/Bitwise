@@ -2,6 +2,7 @@ import "./App.css";
 import { useEffect, useState, useCallback } from "react";
 import LoginPage from "./LoginPage";
 import LibraryCacheGame from "./LibraryCacheGame";
+import CacheTest from "./CacheTest";
 import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress } from "./api";
 
 /* ─── AVATAR ─────────────────────────────────────────── */
@@ -87,7 +88,7 @@ function fmtNum(n) { return typeof n === "number" ? n.toLocaleString() : "—"; 
    MAIN APP
 ═══════════════════════════════════════════════════════ */
 export default function App() {
-  const [view,       setView]       = useState("home"); // home | auth | game
+  const [view,       setView]       = useState("home"); // home | auth | game | pretest | posttest
   const [activeMode, setActiveMode] = useState(null);
 
   // Auth
@@ -175,6 +176,36 @@ export default function App() {
     clearToken(); setIsLoggedIn(false); setUser(null); setView("home");
   };
 
+  /* ── PRE-TEST VIEW ── */
+  if (view === "pretest") {
+    return (
+      <CacheTest
+        type="pre"
+        onBack={() => setView("home")}
+        onFinish={(score) => {
+          setPreScore(score);
+          setView("home");
+        }}
+        existingScore={null}
+      />
+    );
+  }
+
+  /* ── POST-TEST VIEW ── */
+  if (view === "posttest") {
+    return (
+      <CacheTest
+        type="post"
+        onBack={() => setView("home")}
+        onFinish={(score) => {
+          setPostScore(score);
+          setView("home");
+        }}
+        existingScore={preScore}
+      />
+    );
+  }
+
   /* ── GAME VIEW ── */
   if (view === "game" && activeMode) {
     return (
@@ -246,7 +277,7 @@ export default function App() {
             <p>Take a short pre-assessment, then play through three cache mapping modes — direct, set-associative, and fully associative. Retake the quiz after to see how much you learned.</p>
             <div className="bw-hero-btns">
               {!preDone
-                ? <button className="bw-btn-hero-white" onClick={() => alert("Pre-assessment coming soon!")}>Take pre-assessment →</button>
+                ? <button className="bw-btn-hero-white" onClick={() => setView("pretest")}>Take pre-assessment →</button>
                 : <button className="bw-btn-hero-white" onClick={() => { const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete); if (m) { setActiveMode(m.id); setView("game"); } }}>
                     {allModesComplete ? "Replay a mode →" : "Continue playing →"}
                   </button>
@@ -325,7 +356,7 @@ export default function App() {
               <div className="bw-pre-title">Pre-assessment — 10 questions · ~5 min</div>
               <div className="bw-pre-sub">Tests your existing knowledge of cache mapping. Your score is saved and compared to your post-assessment after playing — so you can see exactly how much you learned.</div>
             </div>
-            <button className="bw-btn-pre" onClick={() => alert("Pre-assessment coming soon!")}>
+            <button className="bw-btn-pre" onClick={() => setView("pretest")}>
               Start quiz →
             </button>
           </div>
@@ -405,7 +436,7 @@ export default function App() {
             </div>
           </div>
           {allModesComplete && !postDone
-            ? <button className="bw-btn-pre" onClick={() => alert("Post-assessment coming soon!")}>Start →</button>
+            ? <button className="bw-btn-pre" onClick={() => setView("posttest")}>Start →</button>
             : <div className="bw-post-strip-badge">
                 {postDone ? `+${postScore - preScore} improvement` : allModesComplete ? "Ready!" : `${Object.keys(modeProgress).filter(k => modeProgress[k]?.complete).length} of 3 done`}
               </div>
