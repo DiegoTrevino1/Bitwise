@@ -151,7 +151,7 @@ export default function App() {
 
   // Mode unlock logic
   const modeUnlocked = (modeId) => {
-    if (!preDone) return false;
+    if (!preDone) return true;
     if (modeId === "direct")      return true;
     if (modeId === "set")         return !!modeProgress["direct"]?.complete;
     if (modeId === "associative") return !!modeProgress["set"]?.complete;
