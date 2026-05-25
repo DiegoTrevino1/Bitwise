@@ -125,7 +125,26 @@ function generateQuestions(cfg, count = 10) {
 
         break;
       case "associative":
-
+        lineIdx = Math.floor(Math.random() * cfg.lines);
+        tagVal = cacheLines[lineIdx].tag.toString(2);
+        offsetVal = randomBits(cfg.offsetBits);
+        addr = tagVal + offsetVal;
+        correctLine = lineIdx;
+        correctOffset = parseInt(offsetVal, 2);
+        console.log("addr", addr);
+        
+        if(!isHit) {
+          let tries = 0;
+          do {
+            tagVal = randomBits(cfg.tagBits);
+            tries += 1;
+          } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
+          addr = tagVal + offsetVal;
+          explanation = 'Cache MISS. No line has a matching tag. Select "Cache miss" to indicate a miss.';
+        }
+        else {
+          explanation = `Cache HIT. Line ${lineIdx} has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
+        }
         break;
     }
     questions[i] = {addr, tagVal, setVal, indexVal, offsetVal, correctLine, correctOffset, isHit, explanation, cacheSnapshot: cacheLines.map(l => ({ ...l }))};
