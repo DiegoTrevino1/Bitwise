@@ -1,32 +1,42 @@
-# Architects of Logic — Backend
+# Bitwise — Backend
 
-Express + SQLite API for **Architects of Logic**. Handles user accounts,
-records gameplay sessions for the `cache` and `spell` games, and serves
-an XP leaderboard.
-
-For a deeper tour of the codebase (directory layout, request lifecycle,
-data model, conventions), see [ARCHITECTURE.md](./ARCHITECTURE.md).
+Express + MongoDB API for **Bitwise**. Handles user accounts, gameplay
+sessions, assessments, XP tracking, and a class leaderboard.
 
 ## Stack
 
 - Node.js (CommonJS), Express 4
-- SQLite via `better-sqlite3` (WAL mode)
+- MongoDB Atlas via the official `mongodb` driver
 - bcrypt + JWT (`jsonwebtoken`) for auth
 - `dotenv` for configuration, `nodemon` for dev
 
 ## Quick start
 
-```sh
-cp .env.example .env        # then set JWT_SECRET to a long random string
-npm install
-npm run dev                 # nodemon — restarts on changes
-# or
-npm start                   # plain node server.js
-```
+1. **Create your `.env` file** in this folder:
 
-The server listens on `http://localhost:4000` by default. The SQLite
-database file (`./data/app.db`) and its directory are created on first
-boot.
+   ```
+   PORT=4000
+   JWT_SECRET=<long random string>
+   MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/bitwise?appName=Bitwise
+   CORS_ORIGIN=http://localhost:5173
+   ```
+
+2. **Install dependencies and start:**
+
+   ```sh
+   npm install
+   npm start        # production
+   # or
+   npm run dev      # nodemon — restarts on file changes
+   ```
+
+The server connects to MongoDB first, then listens on `http://localhost:4000`.
+You should see:
+
+```
+✅ MongoDB connected: bitwise
+🚀 Bitwise backend running on http://localhost:4000
+```
 
 ### Health check
 
@@ -37,83 +47,50 @@ curl http://localhost:4000/api/health
 
 ## Configuration
 
-Set in `.env` (see `.env.example`):
+All variables go in `backend/.env`:
 
-| Var           | Default                  | Notes                                |
-| ------------- | ------------------------ | ------------------------------------ |
-| `PORT`        | `4000`                   | HTTP port                            |
-| `JWT_SECRET`  | — (required)             | HS256 signing key — server fails to boot without it |
-| `DB_PATH`     | `./data/app.db`          | SQLite file path                     |
-| `CORS_ORIGIN` | `http://localhost:5173`  | Allowed origin (frontend dev server) |
+| Variable       | Required | Default                 | Notes                              |
+| -------------- | -------- | ----------------------- | ---------------------------------- |
+| `PORT`         | No       | `4000`                  | HTTP port                          |
+| `JWT_SECRET`   | Yes      | —                       | Server won't boot without this     |
+| `MONGODB_URI`  | Yes      | —                       | MongoDB Atlas connection string    |
+| `CORS_ORIGIN`  | No       | `http://localhost:5173` | Frontend dev server origin         |
 
 ## API
 
-Base prefix: `/api`. Protected routes require
-`Authorization: Bearer <token>`.
+Base prefix: `/api`. Protected routes require `Authorization: Bearer <token>`.
 
-| Method | Path                  | Auth | Purpose                              |
-| ------ | --------------------- | ---- | ------------------------------------ |
-| GET    | `/api/health`         | —    | Liveness probe                       |
-| POST   | `/api/auth/register`  | —    | Create user, return JWT              |
-| POST   | `/api/auth/login`     | —    | Verify credentials, return JWT       |
-| GET    | `/api/auth/me`        | JWT  | Current user (`id`, `username`)      |
-| POST   | `/api/progress`       | JWT  | Record a play session                |
-| GET    | `/api/progress/me`    | JWT  | Total XP + per-game stats            |
-| GET    | `/api/leaderboard`    | —    | Top-N users by total XP (`?limit=`)  |
-
-### Examples
-
-Register and capture the token:
-
-```sh
-curl -s -X POST http://localhost:4000/api/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"ada","password":"hunter22"}'
-# { "token": "<jwt>", "user": { "id": 1, "username": "ada" } }
-```
-
-Record a play session:
-
-```sh
-curl -s -X POST http://localhost:4000/api/progress \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"gameId":"cache","score":420,"accuracy":0.87,"xpEarned":120}'
-```
-
-Fetch the leaderboard:
-
-```sh
-curl -s 'http://localhost:4000/api/leaderboard?limit=10'
-```
-
-### Validation rules
-
-- **Username:** 3–32 chars, `[A-Za-z0-9_.-]` only, case-insensitive unique.
-- **Password:** 6–200 chars (bcrypt-hashed at cost 10).
-- **gameId:** `cache` or `spell`.
-- **score / xpEarned:** integer in `[0, 100000]`.
-- **accuracy:** float in `[0, 1]`.
-- **leaderboard `limit`:** clamped to `[1, 100]`, default `10`.
-
-JWTs are HS256, payload `{ uid }`, 7-day expiry.
+| Method | Path                   | Auth | Purpose                              |
+| ------ | ---------------------- | ---- | ------------------------------------ |
+| GET    | `/api/health`          | —    | Liveness probe                       |
+| POST   | `/api/auth/register`   | —    | Create user, return JWT              |
+| POST   | `/api/auth/login`      | —    | Verify credentials, return JWT       |
+| GET    | `/api/auth/me`         | JWT  | Current user (`id`, `username`)      |
+| POST   | `/api/progress`        | JWT  | Record a game session                |
+| GET    | `/api/progress/me`     | JWT  | Total XP + per-mode stats + rank     |
+| GET    | `/api/progress/recent` | —    | Recent activity feed                 |
+| GET    | `/api/leaderboard`     | —    | Top-N users by XP (`?limit=`)        |
+| GET    | `/api/stats/overview`  | —    | Global play count, XP, avg accuracy  |
+| POST   | `/api/assessment`      | JWT  | Submit pre or post assessment score  |
+| GET    | `/api/assessment/me`   | JWT  | User's assessment results            |
 
 ## Project layout
 
 ```
-server.js          Process entrypoint
+server.js               Process entrypoint — connects MongoDB then starts Express
 src/
-  app.js           Express wiring (middleware, routes, error handlers)
-  config.js        Env loading + validation
-  db.js            SQLite open + schema bootstrap
-  routes/          HTTP routers (auth, progress, leaderboard)
-  controllers/     Validation + SQL per endpoint
-  middleware/      requireAuth, notFound, errorHandler
-  utils/jwt.js     sign / verify helpers
-data/app.db        SQLite database (gitignored, created on boot)
+  app.js                Express wiring (middleware, routes, error handlers)
+  config.js             Env loading + validation
+  db.js                 MongoDB connection, index setup, collections() helper
+  routes/               One router file per feature
+  controllers/          Request validation + database logic per endpoint
+  middleware/           requireAuth, notFound, errorHandler
+  utils/jwt.js          sign / verify helpers
 ```
 
 ## Scripts
 
-- `npm run dev` — start with `nodemon` (auto-restart on file changes)
-- `npm start` — start with plain `node`
+| Command       | What it does                              |
+| ------------- | ----------------------------------------- |
+| `npm start`   | Start with plain `node`                   |
+| `npm run dev` | Start with `nodemon` (auto-restart)       |
