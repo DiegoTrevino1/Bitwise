@@ -151,7 +151,7 @@ export default function App() {
 
   // Mode unlock logic
   const modeUnlocked = (modeId) => {
-    if (!preDone) return false;
+    if (!preDone) return true;
     if (modeId === "direct")      return true;
     if (modeId === "set")         return !!modeProgress["direct"]?.complete;
     if (modeId === "associative") return !!modeProgress["set"]?.complete;
@@ -257,7 +257,6 @@ export default function App() {
           ) : (
             <>
               <button className="bw-btn bw-btn-outline" onClick={() => setView("auth")}>Log in</button>
-              <button className="bw-btn bw-btn-primary" onClick={() => setView("auth")}>Get started</button>
             </>
           )}
         </div>
@@ -604,12 +603,6 @@ export default function App() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* TIP */}
-        <div className="bw-tip">
-          <div className="bw-tip-icon">💡</div>
-          <span>XP is based on your <strong>best run</strong> — replaying a mode can only help your score. Complete all three modes to unlock the post-assessment and see your improvement.</span>
         </div>
 
       </main>

@@ -52,6 +52,7 @@
 .lcg-bit-index  { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
 .lcg-bit-set    { background: #fce7f3; border-color: #f9a8d4; color: #831843; }
 .lcg-bit-offset { background: #dcfce7; border-color: #86efac; color: #14532d; }
+.lcg-bit-unknown { background: #e5e7eb; border-color: #d1d5db; color: #374151; }
 .lcg-addr-labels { display: flex; gap: 3px; }
 .lcg-addr-seg { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .lcg-seg-name { font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
