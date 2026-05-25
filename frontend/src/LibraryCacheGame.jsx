@@ -11,9 +11,10 @@ import { postProgress } from "./api";
 */
 
 const CONFIGS = {
-  direct: {
-    id: "direct",
-    label: "Direct Mapping",
+  directEasy: {
+    id: "directEasy",
+    mode: "direct",
+    label: "Direct Mapping Easy",
     color: "#22c55e",
     colorLight: "#f0fdf4",
     colorBorder: "#86efac",
@@ -33,8 +34,56 @@ const CONFIGS = {
       { part: "offset", role: "Select: which byte within the cache line" },
     ],
   },
+  directMedium: {
+    id: "directMedium",
+    mode: "direct",
+    label: "Direct Mapping Medium",
+    color: "#22c55e",
+    colorLight: "#f0fdf4",
+    colorBorder: "#86efac",
+    colorDark: "#14532d",
+    lines: 8,
+    sets: null,
+    waysPerSet: null,
+    tagBits: 4,
+    indexBits: 4,
+    setBits: 0,
+    offsetBits: 2,
+    totalBits: 10,
+    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
+    rules: [
+      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
+      { part: "index",  role: "Locate: the one and only line this address can occupy" },
+      { part: "offset", role: "Select: which byte within the cache line" },
+    ],
+  },
+  directHard: {
+    id: "directHard",
+    mode: "direct",
+    label: "Direct Mapping Hard",
+    color: "#22c55e",
+    colorLight: "#f0fdf4",
+    colorBorder: "#86efac",
+    colorDark: "#14532d",
+    lines: 8,
+    sets: null,
+    waysPerSet: null,
+    tagBits: 4,
+    indexBits: 5,
+    setBits: 0,
+    offsetBits: 2,
+    totalBits: 11,
+    hideAddressLabels: true,
+    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
+    rules: [
+      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
+      { part: "index",  role: "Locate: the one and only line this address can occupy" },
+      { part: "offset", role: "Select: which byte within the cache line" },
+    ],
+  },
   set: {
     id: "set",
+    mode: "set",
     label: "Set-Associative",
     color: "#f59e0b",
     colorLight: "#fffbeb",
@@ -78,97 +127,101 @@ const CONFIGS = {
   },
 };
 
+const DIRECT_DIFFICULTY_OPTIONS = [
+  { id: "easy",   label: "Easy",   description: "Standard 8-line direct mapping with tag/index/offset labels visible." },
+  { id: "medium", label: "Medium", description: "Vary cache size and address width while keeping direct mapping rules." },
+  { id: "hard",   label: "Hard",   description: "Same as Medium, but the address parts are not labeled for the player." },
+];
+
+const DIRECT_DIFFICULTY_PRESETS = [
+  { lines: 8, offsetBits: 1, totalBits: 8 },
+  { lines: 8, offsetBits: 2, totalBits: 9 },
+  { lines: 4, offsetBits: 1, totalBits: 7 },
+  { lines: 16, offsetBits: 1, totalBits: 10 },
+  { lines: 16, offsetBits: 2, totalBits: 11 },
+];
+
+const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+
+function createDirectConfig(difficulty) {
+  const difficultyOption = DIRECT_DIFFICULTY_OPTIONS.find((opt) => opt.id === difficulty) || DIRECT_DIFFICULTY_OPTIONS[0];
+  const preset = difficulty === "easy"
+    ? DIRECT_DIFFICULTY_PRESETS[0]
+    : randomItem(DIRECT_DIFFICULTY_PRESETS.slice(1));
+
+  const indexBits = Math.log2(preset.lines);
+  const tagBits = preset.totalBits - indexBits - preset.offsetBits;
+
+  return {
+    ...CONFIGS.direct,
+    lines: preset.lines,
+    tagBits,
+    indexBits,
+    offsetBits: preset.offsetBits,
+    totalBits: preset.totalBits,
+    difficulty: difficultyOption.id,
+    difficultyLabel: difficultyOption.label,
+    difficultyDescription: difficultyOption.description,
+    hideAddressLabels: difficulty === "hard",
+  };
+}
+
 /* ─────────────────────────────────────────────────────────────
    QUESTION GENERATION  (fully self-contained — no backend)
 ───────────────────────────────────────────────────────────── */
 
 function generateQuestions(cfg, count = 10) {
-  const questions = [];
-  const randomBits = (len) => Math.floor(Math.random() * Math.pow(2, len)).toString(2).padStart(len, "0");
-  const cacheLines = Array.from({ length: cfg.lines }, () => ({ tag: randomBits(cfg.tagBits), data: true }));
+  let questions = []; //array of generated questions
+  const randomBits = (len) => Math.floor(Math.random() * Math.pow(2, len)).toString(2).padStart(len, "0"); //function to generate random binary string
+  const cacheLines = Array.from({ length: cfg.lines }, () => ({ tag: randomBits(cfg.tagBits), data: true })); 
+  let indexVal = null; //Direct: index bits of the address
+  let setVal = null; //Set: set bits of the address
+  let lineIdx = null; //the index of the cache line the address should be pointing to
+  let offsetVal = null; //the offset bits of the address
+  let tagVal = null; //the tag bits of the address
+  let addr = null; //the combined address
+  let correctLine = null; 
+  let correctOffset = null;
+  let isHit = null;
+  let explanation = "";
 
-  for (let q = 0; q < count; q++) {
-    const addrNum = Math.floor(Math.random() * Math.pow(2, cfg.totalBits));
-    let addr = addrNum.toString(2).padStart(cfg.totalBits, "0");
+  console.log("mode: ", cfg.id, "generating questions");
+  for (let i = 0; i < count; i++) {
+    isHit= Math.random() > 0.35;
 
+    switch (cfg.mode) {
+      case "direct":
+        indexVal = randomBits(cfg.indexBits);
+        lineIdx = parseInt(indexVal, 2)%cfg.lines;
+        offsetVal = randomBits(cfg.offsetBits);
+        tagVal = cacheLines[lineIdx].tag;
+        addr = tagVal + indexVal + offsetVal;
+        correctOffset = parseInt(offsetVal, 2);
+        correctLine = lineIdx;
 
-    let cur = 0;
-    const setVal    = cfg.setBits   > 0 ? addr.slice(cur, cur + cfg.setBits)   : null; if (cfg.setBits   > 0) cur += cfg.setBits;
-    const indexVal  = cfg.indexBits > 0 ? addr.slice(cur, cur + cfg.indexBits) : null; if (cfg.indexBits > 0) cur += cfg.indexBits;
-    const lineIdx = parseInt(indexVal, 2);
-    const offsetVal = addr.slice(cur, cur + cfg.offsetBits);
-    let tagVal   = cacheLines[lineIdx].tag;
-    addr = tagVal + indexVal + offsetVal; 
+        console.log(`Question ${i+1}: Line: ${lineIdx}, Initial tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
+        if (!isHit) {
+          let tries = 0;
+          do {
+            tagVal = randomBits(cfg.tagBits);
+            tries += 1;
+          } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
+          addr = tagVal + indexVal + offsetVal; 
+          console.log(`new tagVal: ${tagVal}, new addr: ${addr}`);
+          explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
+        }
+        else {
+            explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
+        }
+        break; 
+      case "set":
 
-    let correctLines = [];
-    let isHit = false;
-    let explanation = "";
-    let correctIsMiss = Math.random() < 0.35;
+        break;
+      case "associative":
 
-    if (cfg.id === "direct") {
-      correctLines = [lineIdx];
-      // If this question is intended to require a "Cache miss" answer,
-      // ensure the generated tagVal does NOT match the stored tag.
-      console.log(`Question 1: Line: ${lineIdx}, Initial tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, correctIsMiss: ${correctIsMiss}, addr: ${addr}`);
-      if (correctIsMiss) {
-        let tries = 0;
-        do {
-          tagVal = randomBits(cfg.tagBits);
-          tries += 1;
-        } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
-        addr = tagVal + indexVal + offsetVal; 
-        console.log(`new tagVal: ${tagVal}, new addr: ${addr}`);
-        explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
-      }
-      else {
-          explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
+        break;
     }
-      //cacheLines[lineIdx] = { tag: tagVal, data: addr };
-
-    } else if (cfg.id === "set") {
-      const setIdx = parseInt(setVal, 2);
-      const linesInSet = Array.from({ length: cfg.waysPerSet }, (_, w) => setIdx * cfg.waysPerSet + w);
-      const hitLine = linesInSet.find(l => cacheLines[l].tag === tagVal);
-      isHit = hitLine !== undefined;
-      if (isHit) {
-        correctLines = [hitLine];
-        explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx} (lines ${linesInSet.join(" & ")}). Tag ${tagVal} matches line ${hitLine} — data found.`;
-      } else {
-        const emptyLine = linesInSet.find(l => cacheLines[l].tag === null);
-        // any line in the set is acceptable on a miss; sometimes require explicit "Cache MISS" selection
-        correctLines = linesInSet;
-        correctIsMiss = Math.random() < 0.35;
-        explanation = correctIsMiss
-          ? `Cache MISS. Set bits ${setVal} = set ${setIdx} (lines ${linesInSet.join(" & ")}). Neither stored tag matches ${tagVal}. Select "Cache miss" to indicate a miss.`
-          : `Cache MISS. Set bits ${setVal} = set ${setIdx} (lines ${linesInSet.join(" & ")}). Neither stored tag matches ${tagVal}. Load into any line within set ${setIdx}.`;
-        const loadInto = emptyLine !== undefined ? emptyLine : linesInSet[0];
-        cacheLines[loadInto] = { tag: tagVal, data: addr };
-      }
-
-    } else {
-      // Fully associative
-      const hitLine = cacheLines.findIndex(l => l.tag === tagVal);
-      isHit = hitLine !== -1;
-      if (isHit) {
-        correctLines = [hitLine];
-        explanation = `Cache HIT. Tag ${tagVal} was found at line ${hitLine} after comparing all ${cfg.lines} lines.`;
-      } else {
-        const emptyLine = cacheLines.findIndex(l => l.tag === null);
-        correctLines = cacheLines.map((_, i) => i);
-        correctIsMiss = Math.random() < 0.35;
-        explanation = correctIsMiss
-          ? `Cache MISS. Tag ${tagVal} was compared against all ${cfg.lines} stored tags — no match. Select "Cache miss" to indicate a miss.`
-          : `Cache MISS. Tag ${tagVal} was compared against all ${cfg.lines} stored tags — no match. Any empty line can be used.`;
-        const loadInto = emptyLine !== -1 ? emptyLine : 0;
-        cacheLines[loadInto] = { tag: tagVal, data: addr };
-      }
-    }
-
-    questions.push({
-      addr, tagVal, setVal, indexVal, offsetVal,
-      correctLines, correctOffset: parseInt(offsetVal, 2), isHit, correctIsMiss, explanation,
-      cacheSnapshot: cacheLines.map(l => ({ ...l })),
-    });
+    questions[i] = {addr, tagVal, setVal, indexVal, offsetVal, correctLine, correctOffset, isHit, explanation, cacheSnapshot: cacheLines.map(l => ({ ...l }))};
   }
   return questions;
 }
@@ -184,18 +237,20 @@ function AddressBits({ addr, cfg }) {
   const actualOffset = cfg.tagBits + cfg.setBits + cfg.indexBits;
   const offsetBits = addr.slice(actualOffset, actualOffset + cfg.offsetBits);
 
-  const parts = [
-    { bits: tagBits,   cls: "tag",    label: "Tag",    len: cfg.tagBits },
-    cfg.setBits   > 0 && { bits: setBits,   cls: "set",    label: "Set",    len: cfg.setBits },
-    cfg.indexBits > 0 && { bits: indexBits, cls: "index",  label: "Index",  len: cfg.indexBits },
-    { bits: offsetBits, cls: "offset", label: "Offset", len: cfg.offsetBits },
-  ].filter(Boolean);
+  const parts = cfg.hideAddressLabels
+    ? [{ bits: addr, cls: "unknown", label: null, len: cfg.totalBits }]
+    : [
+      { bits: tagBits,   cls: "tag",    label: "Tag",    len: cfg.tagBits },
+      cfg.setBits   > 0 && { bits: setBits,   cls: "set",    label: "Set",    len: cfg.setBits },
+      cfg.indexBits > 0 && { bits: indexBits, cls: "index",  label: "Index",  len: cfg.indexBits },
+      { bits: offsetBits, cls: "offset", label: "Offset", len: cfg.offsetBits },
+    ].filter(Boolean);
 
   return (
     <div className="lcg-addr-wrap">
       <div className="lcg-addr-bits">
         {parts.map((p) => p.bits.split("").map((b, i) => (
-          <span key={p.cls + i} className={`lcg-bit lcg-bit-${p.cls}`}>{b}</span>
+          <span key={(p.cls || "unknown") + i} className={`lcg-bit${p.cls ? ` lcg-bit-${p.cls}` : ""}`}>{b}</span>
         )))}
       </div>
     </div>
@@ -206,14 +261,14 @@ function AddressBits({ addr, cfg }) {
    CACHE TABLE
 ───────────────────────────────────────────────────────────── */
 
-function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLines, correctOffset, correctIsMiss, onSelectLine }) {
+function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLine, correctOffset, onSelectLine }) {
   const offsetCount = Math.pow(2, cfg.offsetBits || 0);
   const renderRow = (lineIdx, label, sublabel) => {
     const entry = cacheSnapshot[lineIdx];
     const selRow = selectedLine === lineIdx;
     const rowCorrect = feedback === "correct" && (cfg.id === "direct" ? (selRow && selectedOffset === correctOffset) : selRow);
     const rowWrong = feedback === "wrong" && selRow && (cfg.id === "direct" ? selectedOffset !== correctOffset : true);
-    const rowAnswer = feedback === "wrong" && correctLines.includes(lineIdx) && !correctIsMiss;
+    const rowAnswer = feedback === "wrong" && correctLine === lineIdx;
 
     if (cfg.id === "direct") {
       return (
@@ -250,7 +305,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
     const sel = selRow;
     const ok  = feedback === "correct" && sel;
     const bad = feedback === "wrong"   && sel;
-    const ans = feedback === "wrong"   && correctLines.includes(lineIdx);
+    const ans = feedback === "wrong"   && correctLine === lineIdx;
     return (
       <button
         key={lineIdx}
@@ -260,7 +315,26 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
       >
         <div className="lcg-td lcg-td-line">{label}{sublabel && <span className="lcg-td-sub">{sublabel}</span>}</div>
         <div className="lcg-td lcg-td-tag">{entry.tag ?? <span className="lcg-empty">—</span>}</div>
-        <div className="lcg-td lcg-td-data">{entry.data ? <span className="lcg-cached-dot" title="Has data" /> : <span className="lcg-empty">empty</span>}</div>
+        
+        
+        <div className="lcg-td lcg-td-offsets">
+            {Array.from({ length: offsetCount }, (_, off) => {
+              const isSel = selRow && selectedOffset === off;
+              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset;
+              const isOk  = feedback === "correct" && isSel && selectedOffset === correctOffset;
+              return (
+                <button
+                  key={off}
+                  type="button"
+                  className={`lcg-offset-btn ${isSel ? "lcg-offset-selected" : ""} ${isOk ? "lcg-offset-correct" : ""} ${isAns ? "lcg-offset-answer" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); feedback === null && onSelectLine(lineIdx, off); }}
+                  disabled={feedback !== null}
+                >
+                  {off}
+                </button>
+              );
+            })}
+          </div>
       </button>
     );
   };
@@ -270,7 +344,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
       <div className="lcg-cache-thead">
         <div className="lcg-th lcg-th-line">{cfg.id === "set" ? "Set / Way" : "Line"}</div>
         <div className="lcg-th lcg-th-tag">Stored tag</div>
-        <div className="lcg-th lcg-th-data">{cfg.id === "direct" ? "Byte" : "State"}</div>
+        <div className="lcg-th lcg-th-data">{"byte"}</div>
       </div>
       {cfg.id === "set"
         ? Array.from({ length: cfg.sets }, (_, s) =>
@@ -290,6 +364,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
 
 export default function LibraryCacheGame({ onBack, onHome }) {
   const [activeMode,    setActiveMode]    = useState(null);
+  const [pendingMode,   setPendingMode]   = useState(null);
   const [questions,     setQuestions]     = useState([]);
   const [qIdx,          setQIdx]          = useState(0);
     const [selectedLine,  setSelectedLine]  = useState(null);
@@ -300,21 +375,22 @@ export default function LibraryCacheGame({ onBack, onHome }) {
   const [correctCount,  setCorrectCount]  = useState(0);
   const [phase,         setPhase]         = useState("select");
 
-  const startMode = (modeId) => {
-    const cfg = CONFIGS[modeId];
+  const startMode = (modeId, difficulty = "easy") => {
+    const cfg = modeId === "direct" ? createDirectConfig(difficulty) : CONFIGS[modeId];
     setActiveMode(cfg);
+    setPendingMode(null);
     setQuestions(generateQuestions(cfg, 10));
     setQIdx(0);
     setSelectedLine(null);
     setSelectedOffset(null);
-      setSelectedMiss(false);
+    setSelectedMiss(false);
     setFeedback(null);
     setScore(0);
     setCorrectCount(0);
     setPhase("play");
   };
 
-  const retry = () => activeMode && startMode(activeMode.id);
+  const retry = () => activeMode && startMode(activeMode.id, activeMode.difficulty || "easy");
 
   const q   = questions[qIdx] ?? null;
   const cfg = activeMode;
@@ -322,20 +398,21 @@ export default function LibraryCacheGame({ onBack, onHome }) {
   const handleSubmit = () => {
     if (feedback !== null || !q) return;
     if (selectedMiss) {
-      const isCorrect = !!q.correctIsMiss;
+      const isCorrect = !q.isHit;
       setFeedback(isCorrect ? "correct" : "wrong");
       if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
       return;
     }
-    if (cfg.id === "direct") {
+    if (cfg.mode === "direct") {
+      console.log("Submition: selectedLine: ", selectedLine, "selectedOffset: ", selectedOffset, "correctLine: ", q.correctLine, "correctOffset: ", q.correctOffset);
       if (selectedLine === null || selectedOffset === null) return;
-      const isCorrect = q.correctLines.includes(selectedLine) && selectedOffset === q.correctOffset;
+      const isCorrect = q.correctLine === selectedLine && selectedOffset === q.correctOffset;
       setFeedback(isCorrect ? "correct" : "wrong");
       if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
       return;
     }
     if (selectedLine === null) return;
-    const isCorrect = q.correctLines.includes(selectedLine);
+    const isCorrect = q.correctLine === selectedLine;
     setFeedback(isCorrect ? "correct" : "wrong");
     if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
   };
@@ -370,7 +447,19 @@ export default function LibraryCacheGame({ onBack, onHome }) {
           </div>
           <div className="lcg-mode-grid">
             {Object.values(CONFIGS).map((c) => (
-              <button key={c.id} className="lcg-mode-card" style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }} onClick={() => startMode(c.id)}>
+              <button
+                key={c.id}
+                className="lcg-mode-card"
+                style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
+                onClick={() => {
+                  if (c.id === "direct") {
+                    setPendingMode("direct");
+                    setPhase("difficulty");
+                  } else {
+                    startMode(c.id);
+                  }
+                }}
+              >
                 <div className="lcg-mc-label">{c.label}</div>
                 <p className="lcg-mc-desc">{c.description}</p>
                 <div className="lcg-mc-bits">
@@ -388,11 +477,45 @@ export default function LibraryCacheGame({ onBack, onHome }) {
           <div className="howto-panel">
             <div className="howto-title">How to play</div>
             <ol className="howto-steps">
-              <li>An 8-bit memory address appears, colour-coded to show <strong>tag</strong>, <strong>index/set</strong>, and <strong>offset</strong> bits.</li>
+              <li>An address appears, colour-coded to show <strong>tag</strong>, <strong>index/set</strong>, and <strong>offset</strong> bits.</li>
               <li>The current cache state is shown in the table on the right with any stored tags.</li>
               <li>Use the address parts to decide which cache line this address belongs to, then click that row.</li>
               <li>Press <em>Submit</em> to check. You'll see whether it was a <strong>hit</strong> (tag already matched) or a <strong>miss</strong> (must load), with a full explanation.</li>
             </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── DIFFICULTY SELECT ── */
+  if (phase === "difficulty" && pendingMode === "direct") {
+    return (
+      <div className="lcg-shell">
+        <div className="lcg-topbar">
+          <button className="lcg-back-btn" onClick={() => { setPendingMode(null); setPhase("select"); }}>← Back</button>
+          <div className="lcg-topbar-title">Bitwise — Direct Mapping</div>
+          <button className="lcg-home-btn" onClick={onHome}>Home</button>
+        </div>
+        <div className="lcg-select-body">
+          <div className="lcg-select-hero">
+            <div className="lcg-select-eyebrow">Direct Mapping</div>
+            <h2 className="lcg-select-title">Choose difficulty</h2>
+            <p className="lcg-select-sub">Pick a direct-mapping challenge level. Medium varies cache size and address width, and Hard hides the labeled address fields.</p>
+          </div>
+          <div className="lcg-mode-grid">
+            {DIRECT_DIFFICULTY_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                className="lcg-mode-card"
+                style={{ "--mc": "#22c55e", "--mcl": "#f0fdf4", "--mcb": "#86efac", "--mcd": "#14532d" }}
+                onClick={() => startMode("direct", option.id)}
+              >
+                <div className="lcg-mc-label">{option.label}</div>
+                <p className="lcg-mc-desc">{option.description}</p>
+                <div className="lcg-mc-play">Start →</div>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -406,7 +529,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
       <div className="lcg-shell">
         <div className="lcg-topbar">
           <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
-          <div className="lcg-topbar-title">Bitwise — {cfg.label}</div>
+          <div className="lcg-topbar-title">Bitwise — {cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</div>
           <button className="lcg-home-btn" onClick={onHome}>Home</button>
         </div>
         <div className="lcg-summary-wrap">
@@ -438,7 +561,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
       <div className="lcg-topbar">
         <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
         <div className="lcg-topbar-center">
-          <span className="lcg-topbar-mode" style={{ color: cfg.color }}>{cfg.label}</span>
+          <span className="lcg-topbar-mode" style={{ color: cfg.color }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
           <div className="lcg-progress-track">
             <div className="lcg-progress-fill" style={{ width: `${(qIdx / questions.length) * 100}%`, background: cfg.color }} />
           </div>
@@ -457,44 +580,43 @@ export default function LibraryCacheGame({ onBack, onHome }) {
               <span className="lcg-qcard-eyebrow">Memory access #{qIdx + 1}</span>
             </div>
 
-            <div className="lcg-addr-row-label">8-bit address</div>
+            <div className="lcg-addr-row-label">{cfg.totalBits}-bit address</div>
             <AddressBits addr={q.addr} cfg={cfg} />
 
-            <div className="lcg-decoded-rows">
-              <div className="lcg-decoded-row">
-                <span className="lcg-decoded-badge lcg-decoded-tag">tag</span>
-                <code className="lcg-decoded-bin">{q.tagVal}</code>
-                {cfg.id !== "direct" && <span className="lcg-decoded-dec">= {parseInt(q.tagVal, 2)}</span>}
-                <span className="lcg-decoded-role">
-                  {cfg.id === "associative" ? "compare every cache line" : cfg.id === "set" ? "identify row within its set" : "verify correct data is stored"}
-                </span>
-              </div>
-              {cfg.setBits > 0 && (
+            {!cfg.hideAddressLabels && (
+              <div className="lcg-decoded-rows">
                 <div className="lcg-decoded-row">
-                  <span className="lcg-decoded-badge lcg-decoded-set">set</span>
-                  <code className="lcg-decoded-bin">{q.setVal}</code>
-                  {cfg.id !== "direct" && <span className="lcg-decoded-dec">= {parseInt(q.setVal, 2)}</span>}
-                  <span className="lcg-decoded-role">{cfg.id !== "direct" ? `maps to set ${parseInt(q.setVal, 2)}` : "maps to a set"}</span>
+                  <span className="lcg-decoded-badge lcg-decoded-tag">tag</span>
+                  <code className="lcg-decoded-bin">{q.tagVal}</code>
+                  <span className="lcg-decoded-role">
+                    {cfg.id === "associative" ? "compare every cache line" : cfg.id === "set" ? "identify row within its set" : "verify correct data is stored"}
+                  </span>
                 </div>
-              )}
-              {cfg.indexBits > 0 && (
+                {cfg.setBits > 0 && (
+                  <div className="lcg-decoded-row">
+                    <span className="lcg-decoded-badge lcg-decoded-set">set</span>
+                    <code className="lcg-decoded-bin">{q.setVal}</code>
+                    <span className="lcg-decoded-role">{"maps to a set"}</span>
+                  </div>
+                )}
+                {cfg.indexBits > 0 && (
+                  <div className="lcg-decoded-row">
+                    <span className="lcg-decoded-badge lcg-decoded-index">index</span>
+                    <code className="lcg-decoded-bin">{q.indexVal}</code>
+                    <span className="lcg-decoded-role">{"maps to a line"}</span>
+                  </div>
+                )}
                 <div className="lcg-decoded-row">
-                  <span className="lcg-decoded-badge lcg-decoded-index">index</span>
-                  <code className="lcg-decoded-bin">{q.indexVal}</code>
-                  {cfg.id !== "direct" && <span className="lcg-decoded-dec">= {parseInt(q.indexVal, 2)}</span>}
-                  <span className="lcg-decoded-role">{cfg.id !== "direct" ? `maps to line ${parseInt(q.indexVal, 2)}` : "maps to a line"}</span>
+                  <span className="lcg-decoded-badge lcg-decoded-offset">offset</span>
+                  <code className="lcg-decoded-bin">{q.offsetVal}</code>
+                  <span className="lcg-decoded-role">{"which byte within the line"}</span>
                 </div>
-              )}
-              <div className="lcg-decoded-row">
-                <span className="lcg-decoded-badge lcg-decoded-offset">offset</span>
-                <code className="lcg-decoded-bin">{q.offsetVal}</code>
-                {cfg.id !== "direct" && <span className="lcg-decoded-dec">= {parseInt(q.offsetVal, 2)}</span>}
-                <span className="lcg-decoded-role">{cfg.id !== "direct" ? `byte ${parseInt(q.offsetVal, 2)} within the line` : "which byte within the line"}</span>
               </div>
-            </div>
+            )}
 
             <div className="lcg-question-prompt">
-              {cfg.id === "direct"      && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
+              {cfg.id === "direct" && cfg.hideAddressLabels && "The address parts are hidden in Hard mode. Use the bit pattern to identify the correct line and byte."}
+              {cfg.id === "direct" && !cfg.hideAddressLabels && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
               {cfg.id === "set"         && "Which set does this address belong to? Click any line within the correct set."}
               {cfg.id === "associative" && "Where can this address go? If a tag matches click that line — otherwise click any empty line."}
             </div>
@@ -513,7 +635,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
 
               <button
                 type="button"
-                className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""} ${q.correctIsMiss && feedback !== null ? "lcg-miss-answer" : ""} ${feedback === "wrong" && selectedMiss && !q.correctIsMiss ? "lcg-miss-wrong" : ""}`}
+                className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""} ${!q.isHit && feedback !== null ? "lcg-miss-answer" : ""} ${feedback === "wrong" && selectedMiss && q.isHit ? "lcg-miss-wrong" : ""}`}
                 onClick={() => { if (feedback === null) { setSelectedMiss((s) => !s); setSelectedLine(null); setSelectedOffset(null); } }}
               >
                 Cache miss
@@ -537,7 +659,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
               <div className="lcg-fb-icon">✗</div>
               <div className="lcg-fb-title">Not quite</div>
               <p className="lcg-fb-body">{q.explanation}</p>
-              <p className="lcg-fb-hint">{q.correctIsMiss ? 'The correct answer is "Cache miss".' : 'The correct line is highlighted green in the cache table.'}</p>
+              <p className="lcg-fb-hint">{!q.isHit ? 'The correct answer is "Cache miss".' : 'The correct line is highlighted green in the cache table.'}</p>
               <button className="lcg-btn-next" style={{ background: cfg.color }} onClick={handleNext}>
                 {qIdx + 1 < questions.length ? "Next →" : "See results →"}
               </button>
@@ -560,9 +682,8 @@ export default function LibraryCacheGame({ onBack, onHome }) {
             selectedLine={selectedLine}
             selectedOffset={selectedOffset}
             feedback={feedback}
-            correctLines={q.correctLines}
+            correctLine={q.correctLine}
             correctOffset={q.correctOffset}
-            correctIsMiss={q.correctIsMiss}
             onSelectLine={(i, off) => { setSelectedLine(i); setSelectedOffset(off); }}
           />
         </div>
