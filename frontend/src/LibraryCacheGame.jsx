@@ -363,7 +363,6 @@ export default function LibraryCacheGame({ onBack, onHome }) {
         <div className="lcg-topbar">
           <button className="lcg-back-btn" onClick={onBack}>← Back</button>
           <div className="lcg-topbar-title">Bitwise — Cache Mapping</div>
-          <button className="lcg-home-btn" onClick={onHome}>Home</button>
         </div>
         <div className="lcg-select-body">
           <div className="lcg-select-hero">
