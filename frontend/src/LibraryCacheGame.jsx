@@ -1,131 +1,8 @@
 import { useState } from "react";
 import "./LibraryCacheGame.css";
 import { postProgress } from "./api";
+import { CONFIGS } from "./GameConfigs";
 
-/* ─────────────────────────────────────────────────────────────
-   CACHE CONFIGURATIONS PER MODE
-   ─────────────────────────────────────────────────────────────
-   Direct mapping   : 8 lines, 8-bit addr → tag(4) | index(3) | offset(1)
-   Set-associative  : 8 lines, 4 sets × 2 ways, 8-bit addr → tag(5) | set(2) | offset(1)
-   Fully associative: 8 lines, 8-bit addr → tag(7) | offset(1)
-*/
-
-const CONFIGS = {
-  directEasy: {
-    id: "directEasy",
-    mode: "direct",
-    label: "Direct Mapping Easy",
-    color: "#22c55e",
-    colorLight: "#f0fdf4",
-    colorBorder: "#86efac",
-    colorDark: "#14532d",
-    lines: 8,
-    sets: null,
-    waysPerSet: null,
-    tagBits: 4,
-    indexBits: 3,
-    setBits: 0,
-    offsetBits: 1,
-    totalBits: 8,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
-  },
-  directMedium: {
-    id: "directMedium",
-    mode: "direct",
-    label: "Direct Mapping Medium",
-    color: "#22c55e",
-    colorLight: "#f0fdf4",
-    colorBorder: "#86efac",
-    colorDark: "#14532d",
-    lines: 8,
-    sets: null,
-    waysPerSet: null,
-    tagBits: 4,
-    indexBits: 4,
-    setBits: 0,
-    offsetBits: 2,
-    totalBits: 10,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
-  },
-  directHard: {
-    id: "directHard",
-    mode: "direct",
-    label: "Direct Mapping Hard",
-    color: "#22c55e",
-    colorLight: "#f0fdf4",
-    colorBorder: "#86efac",
-    colorDark: "#14532d",
-    lines: 8,
-    sets: null,
-    waysPerSet: null,
-    tagBits: 4,
-    indexBits: 5,
-    setBits: 0,
-    offsetBits: 2,
-    totalBits: 11,
-    hideAddressLabels: true,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
-  },
-  set: {
-    id: "set",
-    mode: "set",
-    label: "Set-Associative",
-    color: "#f59e0b",
-    colorLight: "#fffbeb",
-    colorBorder: "#fbbf24",
-    colorDark: "#78350f",
-    lines: 8,
-    sets: 4,
-    waysPerSet: 2,
-    tagBits: 5,
-    indexBits: 0,
-    setBits: 2,
-    offsetBits: 1,
-    totalBits: 8,
-    description: "The cache is split into sets, each holding multiple lines. Set bits identify which set this address belongs to. The data can be placed in any line within that set. Tag bits identify which specific line holds the data.",
-    rules: [
-      { part: "tag",    role: "Identify: which line in the set holds this data — miss if no tags match" },
-      { part: "set",    role: "Locate: which set of lines this address belongs to" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
-  },
-  associative: {
-    id: "associative",
-    label: "Fully Associative",
-    color: "#8b5cf6",
-    colorLight: "#f5f3ff",
-    colorBorder: "#c4b5fd",
-    colorDark: "#4c1d95",
-    lines: 8,
-    sets: null,
-    waysPerSet: null,
-    tagBits: 7,
-    indexBits: 0,
-    setBits: 0,
-    offsetBits: 1,
-    totalBits: 8,
-    description: "Memory can be placed in any cache line — there are no index or set bits. Every tag in every line must be compared on each lookup. A miss only occurs when no stored tag matches.",
-    rules: [
-      { part: "tag",    role: "Compare ALL lines — if no stored tag matches → cache miss" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
-  },
-};
 
 const DIRECT_DIFFICULTY_OPTIONS = [
   { id: "easy",   label: "Easy",   description: "Standard 8-line direct mapping with tag/index/offset labels visible." },
@@ -177,20 +54,25 @@ function generateQuestions(cfg, count = 10) {
   let indexVal = null; //Direct: index bits of the address
   let setVal = null; //Set: set bits of the address
   let lineIdx = null; //the index of the cache line the address should be pointing to
+  let setIdx = null; //Set: the index of the set the address should be pointing to
   let offsetVal = null; //the offset bits of the address
   let tagVal = null; //the tag bits of the address
   let addr = null; //the combined address
   let correctLine = null; 
   let correctOffset = null;
-  let isHit = null;
-  let explanation = "";
+  let isHit = null; //whether the question should be a hit or a miss
+  let explanation = ""; //explanation of the correct answer
 
   console.log("mode: ", cfg.id, "generating questions");
+  //generate questions
   for (let i = 0; i < count; i++) {
+    //randomly decide if the question will be a hit or a miss (35% hit rate)
     isHit= Math.random() > 0.35;
 
+    //find the mode
     switch (cfg.mode) {
       case "direct":
+        //generate index,offset, and tag  
         indexVal = randomBits(cfg.indexBits);
         lineIdx = parseInt(indexVal, 2)%cfg.lines;
         offsetVal = randomBits(cfg.offsetBits);
@@ -200,6 +82,7 @@ function generateQuestions(cfg, count = 10) {
         correctLine = lineIdx;
 
         console.log(`Question ${i+1}: Line: ${lineIdx}, Initial tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
+        //if the question should be a miss, change the tag so they don't match
         if (!isHit) {
           let tries = 0;
           do {
@@ -215,6 +98,30 @@ function generateQuestions(cfg, count = 10) {
         }
         break; 
       case "set":
+        //generate the set, offset, and tag  
+        setVal = randomBits(cfg.setBits);
+        setIdx = parseInt(setVal, 2)%cfg.sets;
+        //pick a random line within the set
+        lineIdx = setIdx * cfg.waysPerSet + Math.floor(Math.random() * cfg.waysPerSet);
+        tagVal = cacheLines[lineIdx].tag;
+        offsetVal = randomBits(cfg.offsetBits);
+        addr = tagVal + setVal + offsetVal;
+        correctLine = lineIdx;
+        correctOffset = parseInt(offsetVal, 2);
+
+        //if the question should be a miss, change the tag
+        if(!isHit) {
+          let tries = 0;
+          do {
+            tagVal = randomBits(cfg.tagBits);
+            tries += 1;
+          } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
+          addr = tagVal + setVal + offsetVal; 
+          explanation = `Cache MISS. Set bits ${setVal} map to set ${setIdx}, but no line in that set has a matching tag. Select "Cache miss" to indicate a miss.`;
+        }
+        else {
+          explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineIdx} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
+        }
 
         break;
       case "associative":
@@ -342,14 +249,14 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
   return (
     <div className="lcg-cache-table">
       <div className="lcg-cache-thead">
-        <div className="lcg-th lcg-th-line">{cfg.id === "set" ? "Set / Way" : "Line"}</div>
+        <div className="lcg-th lcg-th-line">{cfg.mode === "set" ? "Set" : "Line"}</div>
         <div className="lcg-th lcg-th-tag">Stored tag</div>
-        <div className="lcg-th lcg-th-data">{"byte"}</div>
+        <div className="lcg-th lcg-th-data">byte</div>
       </div>
-      {cfg.id === "set"
+      {cfg.mode === "set"
         ? Array.from({ length: cfg.sets }, (_, s) =>
             Array.from({ length: cfg.waysPerSet }, (_, w) =>
-              renderRow(s * cfg.waysPerSet + w, `Set ${s}`, `Way ${w}`)
+              renderRow(s * cfg.waysPerSet + w, `Set ${s}`, `Line ${w}`)
             )
           )
         : Array.from({ length: cfg.lines }, (_, i) => renderRow(i, `Line ${i}`, null))
@@ -573,7 +480,6 @@ export default function LibraryCacheGame({ onBack, onHome }) {
       </div>
 
       <div className="lcg-play-layout">
-        {/* LEFT: address decoder + question */}
         <div className="lcg-left">
           <div className="lcg-question-card" style={{ "--mc": cfg.color, "--mcl": cfg.colorLight, "--mcb": cfg.colorBorder }}>
             <div className="lcg-qcard-header">
@@ -589,7 +495,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
                   <span className="lcg-decoded-badge lcg-decoded-tag">tag</span>
                   <code className="lcg-decoded-bin">{q.tagVal}</code>
                   <span className="lcg-decoded-role">
-                    {cfg.id === "associative" ? "compare every cache line" : cfg.id === "set" ? "identify row within its set" : "verify correct data is stored"}
+                    {cfg.mode === "associative" ? "compare every cache line" : cfg.mode === "set" ? "identify row within its set" : "verify correct data is stored"}
                   </span>
                 </div>
                 {cfg.setBits > 0 && (
