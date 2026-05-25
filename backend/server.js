@@ -1,6 +1,14 @@
-const app = require('./src/app');
-const { PORT } = require('./src/config');
+const { connect } = require('./src/db');
+const { PORT }    = require('./src/config');
+const app         = require('./src/app');
 
-app.listen(PORT, () => {
-  console.log(`Architects of Logic backend listening on http://localhost:${PORT}`);
-});
+connect()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Bitwise backend running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Failed to connect to MongoDB:', err.message);
+    process.exit(1);
+  });
