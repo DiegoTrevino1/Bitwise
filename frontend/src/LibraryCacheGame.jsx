@@ -125,14 +125,18 @@ function generateQuestions(cfg, count = 10) {
 
         break;
       case "associative":
+        //generate the correct line
         lineIdx = Math.floor(Math.random() * cfg.lines);
+        //from the correct line get the tag
         tagVal = cacheLines[lineIdx].tag.toString(2);
+        //generate the offset
         offsetVal = randomBits(cfg.offsetBits);
+        //combine to get full address
         addr = tagVal + offsetVal;
         correctLine = lineIdx;
         correctOffset = parseInt(offsetVal, 2);
-        console.log("addr", addr);
         
+        //if the question should be a miss change the tag
         if(!isHit) {
           let tries = 0;
           do {
@@ -192,41 +196,10 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
   const renderRow = (lineIdx, label, sublabel) => {
     const entry = cacheSnapshot[lineIdx];
     const selRow = selectedLine === lineIdx;
-    const rowCorrect = feedback === "correct" && (cfg.id === "direct" ? (selRow && selectedOffset === correctOffset) : selRow);
-    const rowWrong = feedback === "wrong" && selRow && (cfg.id === "direct" ? selectedOffset !== correctOffset : true);
+    const rowCorrect = feedback === "correct" && (cfg.mode === "direct" ? (selRow && selectedOffset === correctOffset) : selRow);
+    const rowWrong = feedback === "wrong" && selRow && (cfg.mode === "direct" ? selectedOffset !== correctOffset : true);
     const rowAnswer = feedback === "wrong" && correctLine === lineIdx;
 
-    if (cfg.id === "direct") {
-      return (
-        <button
-          key={lineIdx}
-          className={`lcg-cache-row lcg-cache-row-btn lcg-cache-row-direct ${selRow ? "lcg-row-selected" : ""} ${rowCorrect ? "lcg-row-correct" : ""} ${rowWrong ? "lcg-row-wrong" : ""} ${rowAnswer ? "lcg-row-answer" : ""}`}
-          onClick={() => feedback === null && onSelectLine(lineIdx, null)}
-          disabled={feedback !== null}
-        >
-          <div className="lcg-td lcg-td-line">{label}{sublabel && <span className="lcg-td-sub">{sublabel}</span>}</div>
-          <div className="lcg-td lcg-td-tag">{entry.tag ?? <span className="lcg-empty">—</span>}</div>
-          <div className="lcg-td lcg-td-offsets">
-            {Array.from({ length: offsetCount }, (_, off) => {
-              const isSel = selRow && selectedOffset === off;
-              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset;
-              const isOk  = feedback === "correct" && isSel && selectedOffset === correctOffset;
-              return (
-                <button
-                  key={off}
-                  type="button"
-                  className={`lcg-offset-btn ${isSel ? "lcg-offset-selected" : ""} ${isOk ? "lcg-offset-correct" : ""} ${isAns ? "lcg-offset-answer" : ""}`}
-                  onClick={(e) => { e.stopPropagation(); feedback === null && onSelectLine(lineIdx, off); }}
-                  disabled={feedback !== null}
-                >
-                  {off}
-                </button>
-              );
-            })}
-          </div>
-        </button>
-      );
-    }
 
     const sel = selRow;
     const ok  = feedback === "correct" && sel;
@@ -539,10 +512,10 @@ export default function LibraryCacheGame({ onBack, onHome }) {
             )}
 
             <div className="lcg-question-prompt">
-              {cfg.id === "direct" && cfg.hideAddressLabels && "The address parts are hidden in Hard mode. Use the bit pattern to identify the correct line and byte."}
-              {cfg.id === "direct" && !cfg.hideAddressLabels && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
-              {cfg.id === "set"         && "Which set does this address belong to? Click any line within the correct set."}
-              {cfg.id === "associative" && "Where can this address go? If a tag matches click that line — otherwise click any empty line."}
+              {cfg.hideAddressLabels && "The address parts are hidden in Hard mode."}
+              {cfg.mode === "direct" && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
+              {cfg.mode === "set"         && "Which set does this address belong to? Click the line with the matching tag within that set."}
+              {cfg.mode === "associative" && "Where can this address go? If a tag matches click that line — otherwise click cache miss"}
             </div>
           </div>
 
@@ -552,9 +525,9 @@ export default function LibraryCacheGame({ onBack, onHome }) {
                 className="lcg-submit-btn"
                 style={{ background: cfg.color }}
                 onClick={handleSubmit}
-                disabled={selectedMiss ? false : (cfg.id === "direct" ? (selectedLine === null || selectedOffset === null) : (selectedLine === null))}
+                disabled={selectedMiss ? false : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null) : (selectedLine === null))}
               >
-                {selectedMiss ? "Submit cache miss" : (cfg.id === "direct" ? (selectedLine === null || selectedOffset === null ? "← Select a line and byte in the cache table" : "Submit answer →") : (selectedLine === null ? "← Select a line in the cache table" : "Submit answer →"))}
+                {selectedMiss ? "Submit cache miss" : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null ? "← Select a line and byte in the cache table" : "Submit answer →") : (selectedLine === null ? "← Select a line in the cache table" : "Submit answer →"))}
               </button>
 
               <button
@@ -596,7 +569,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
           <div className="lcg-cache-header">
             <span className="lcg-cache-title">Cache state</span>
             <span className="lcg-cache-meta">
-              {cfg.id === "set" ? `${cfg.sets} sets · ${cfg.waysPerSet} ways each · ${cfg.lines} total lines`
+              {cfg.mode === "set" ? `${cfg.sets} sets · ${cfg.waysPerSet} ways each · ${cfg.lines} total lines`
                                 : `${cfg.lines} lines`}
             </span>
           </div>
