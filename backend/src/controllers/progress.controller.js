@@ -1,118 +1,102 @@
-const db = require('../db');
+const { collections, ObjectId } = require('../db');
 
-const isValidGameId = db.prepare(
-  'SELECT 1 AS ok FROM games WHERE id = ? AND status = ? LIMIT 1'
-);
+const MODE_IDS    = ['direct', 'set', 'associative'];
+const MODE_LABELS = { direct: 'Direct Mapping', set: 'Set-Associative', associative: 'Fully Associative' };
 
-function isPlayableGame(gameId) {
-  if (typeof gameId !== 'string' || !gameId) return false;
-  return !!isValidGameId.get(gameId, 'playable');
+async function record(req, res) {
+  const { gameId, modeId, score, accuracy, xpEarned } = req.body || {};
+
+  if (typeof gameId !== 'string' || !gameId)
+    return res.status(400).json({ error: 'invalid gameId' });
+  if (!MODE_IDS.includes(modeId))
+    return res.status(400).json({ error: 'modeId must be direct, set, or associative' });
+  if (!Number.isFinite(score) || score < 0)
+    return res.status(400).json({ error: 'invalid score' });
+  if (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 1)
+    return res.status(400).json({ error: 'accuracy must be 0–1' });
+  if (!Number.isFinite(xpEarned) || xpEarned < 0)
+    return res.status(400).json({ error: 'invalid xpEarned' });
+
+  const userId = new ObjectId(req.user.id);
+  const { users, sessions } = collections();
+
+  // Only award improvement XP over the user's previous best for this mode
+  const prevBest = await sessions
+    .find({ userId, modeId })
+    .sort({ xpEarned: -1 })
+    .limit(1)
+    .toArray();
+  const prevBestXp    = prevBest[0]?.xpEarned ?? 0;
+  const xpImprovement = Math.max(0, xpEarned - prevBestXp);
+
+  await sessions.insertOne({ userId, gameId, modeId, score, accuracy, xpEarned, createdAt: new Date() });
+
+  if (xpImprovement > 0) {
+    await users.updateOne({ _id: userId }, { $inc: { totalXp: xpImprovement } });
+  }
+
+  return res.status(201).json({ ok: true, xpEarned: xpImprovement });
 }
 
-const insertSession = db.prepare(
-  `INSERT INTO play_sessions (user_id, game_id, score, accuracy, xp_earned)
-   VALUES (?, ?, ?, ?, ?)`
-);
-const getTotalXp = db.prepare(
-  `SELECT COALESCE(SUM(xp_earned), 0) AS total_xp
-   FROM play_sessions WHERE user_id = ?`
-);
-const getPerGame = db.prepare(
-  `SELECT game_id,
-          COALESCE(MAX(score), 0)    AS best_score,
-          COUNT(*)                   AS plays,
-          COALESCE(AVG(accuracy), 0) AS accuracy
-   FROM play_sessions
-   WHERE user_id = ?
-   GROUP BY game_id`
-);
-const getUserCount = db.prepare(`SELECT COUNT(*) AS count FROM users`);
-const getRankQuery = db.prepare(
-  `SELECT 1 + COUNT(*) AS rank
-   FROM (
-     SELECT u.id, COALESCE(SUM(s.xp_earned), 0) AS total_xp
-     FROM users u
-     LEFT JOIN play_sessions s ON s.user_id = u.id
-     GROUP BY u.id
-   ) t
-   WHERE t.total_xp > ? OR (t.total_xp = ? AND t.id < ?)`
-);
-const getRecentQuery = db.prepare(
-  `SELECT s.id, s.game_id, s.score, s.accuracy, s.xp_earned, s.created_at,
-          u.username
-   FROM play_sessions s
-   JOIN users u ON u.id = s.user_id
-   ORDER BY s.created_at DESC, s.id DESC
-   LIMIT ?`
-);
-const getPlayableGamesQuery = db.prepare(
-  `SELECT id FROM games WHERE status = 'playable' ORDER BY sort_order, id`
-);
+async function summary(req, res) {
+  const userId = new ObjectId(req.user.id);
+  const { users, sessions } = collections();
 
-function emptyGameStats() {
-  return { bestScore: 0, plays: 0, accuracy: 0 };
-}
+  const [user, modeAgg, totalUsers] = await Promise.all([
+    users.findOne({ _id: userId }, { projection: { totalXp: 1 } }),
+    sessions.aggregate([
+      { $match: { userId } },
+      { $group: {
+        _id:      '$modeId',
+        bestXp:   { $max: '$xpEarned' },
+        plays:    { $sum: 1 },
+        accuracy: { $avg: '$accuracy' },
+      }},
+    ]).toArray(),
+    users.countDocuments(),
+  ]);
 
-function record(req, res) {
-  const { gameId, score, accuracy, xpEarned } = req.body || {};
+  const totalXp = user?.totalXp ?? 0;
+  const rank    = await users.countDocuments({ totalXp: { $gt: totalXp } }) + 1;
 
-  if (!isPlayableGame(gameId)) {
-    return res.status(400).json({ error: 'gameId is not a playable game' });
-  }
-  if (!Number.isFinite(score) || score < 0 || score > 100000) {
-    return res.status(400).json({ error: 'score must be 0–100000' });
-  }
-  if (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 1) {
-    return res.status(400).json({ error: 'accuracy must be between 0 and 1' });
-  }
-  if (!Number.isFinite(xpEarned) || xpEarned < 0 || xpEarned > 100000) {
-    return res.status(400).json({ error: 'xpEarned must be 0–100000' });
-  }
-
-  const result = insertSession.run(
-    req.user.id,
-    gameId,
-    Math.round(score),
-    accuracy,
-    Math.round(xpEarned)
-  );
-  return res.status(201).json({ ok: true, sessionId: result.lastInsertRowid });
-}
-
-function summary(req, res) {
-  const { total_xp } = getTotalXp.get(req.user.id);
-  const rows = getPerGame.all(req.user.id);
-  const { count: totalUsers } = getUserCount.get();
-  const { rank } = getRankQuery.get(total_xp, total_xp, req.user.id);
-
-  const perGame = {};
-  for (const g of getPlayableGamesQuery.all()) {
-    perGame[g.id] = emptyGameStats();
-  }
-  for (const r of rows) {
-    perGame[r.game_id] = {
-      bestScore: r.best_score,
-      plays: r.plays,
+  const perMode = {};
+  for (const m of MODE_IDS) perMode[m] = { bestXp: 0, plays: 0, accuracy: 0, complete: false };
+  for (const r of modeAgg) {
+    perMode[r._id] = {
+      bestXp:   r.bestXp,
+      plays:    r.plays,
       accuracy: Number(r.accuracy.toFixed(4)),
+      complete: true,
     };
   }
-  return res.json({ totalXp: total_xp, rank, totalUsers, perGame });
+
+  return res.json({ totalXp, rank, totalUsers, perMode });
 }
 
-function recent(req, res) {
+async function recent(req, res) {
   let limit = parseInt(req.query.limit, 10);
   if (!Number.isFinite(limit)) limit = 10;
   limit = Math.min(50, Math.max(1, limit));
 
-  const rows = getRecentQuery.all(limit);
-  const out = rows.map((r) => ({
-    id: r.id,
-    username: r.username,
-    gameId: r.game_id,
-    score: r.score,
-    accuracy: Number(r.accuracy.toFixed(4)),
-    xpEarned: r.xp_earned,
-    createdAt: r.created_at,
+  const { users, sessions } = collections();
+  const rows = await sessions.find({}).sort({ createdAt: -1 }).limit(limit).toArray();
+
+  const userIds  = [...new Set(rows.map(r => r.userId.toString()))];
+  const userDocs = await users
+    .find({ _id: { $in: userIds.map(id => new ObjectId(id)) } }, { projection: { username: 1 } })
+    .toArray();
+  const userMap = Object.fromEntries(userDocs.map(u => [u._id.toString(), u.username]));
+
+  const now = Date.now();
+  const out = rows.map(r => ({
+    id:        r._id.toString(),
+    username:  userMap[r.userId.toString()] || 'unknown',
+    modeId:    r.modeId,
+    modeLabel: MODE_LABELS[r.modeId] || r.modeId,
+    score:     r.score,
+    accuracy:  r.accuracy,
+    xpEarned:  r.xpEarned,
+    ts:        Math.round((now - new Date(r.createdAt).getTime()) / 1000),
   }));
   return res.json(out);
 }

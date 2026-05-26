@@ -2,7 +2,8 @@ import "./App.css";
 import { useEffect, useState, useCallback } from "react";
 import LoginPage from "./LoginPage";
 import LibraryCacheGame from "./LibraryCacheGame";
-import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress } from "./api";
+import PreAssessment from "./PreAssessment";
+import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress, getAssessmentResults } from "./api";
 
 /* ─── AVATAR ─────────────────────────────────────────── */
 const PALETTE = [
@@ -31,6 +32,7 @@ const MODES = [
     label: "Direct Mapping",
     tag: "Mode 1 · Beginner",
     color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
+    maxXp: 100,
     desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
     bits: [
       { part: "tag",    cls: "bw-bit-tag",    role: "Verify correct data is loaded — miss if tags don't match" },
@@ -43,6 +45,7 @@ const MODES = [
     label: "Set-Associative",
     tag: "Mode 2 · Intermediate",
     color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
+    maxXp: 200,
     desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
     bits: [
       { part: "tag",    cls: "bw-bit-tag",    role: "Identify which row within the set — miss if no tags match" },
@@ -55,6 +58,7 @@ const MODES = [
     label: "Fully Associative",
     tag: "Mode 3 · Advanced",
     color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
+    maxXp: 300,
     desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
     bits: [
       { part: "tag",    cls: "bw-bit-tag",    role: "Compare ALL lines — miss if no stored tag matches" },
@@ -64,16 +68,15 @@ const MODES = [
 ];
 
 /* ─── DUMMY LEADERBOARD / ACTIVITY DATA ──────────────── */
-// Used when the backend isn't running so the UI still looks populated
 const DUMMY_LB = [
-  { rank: 1, username: "alex_k",  totalXp: 8240, color: "#0057ff" },
-  { rank: 2, username: "maya_r",  totalXp: 6420, color: "#8b5cf6" },
-  { rank: 3, username: "j_liu",   totalXp: 5010, color: "#f59e0b" },
+  { rank: 1, username: "alex_k",  totalXp: 8240 },
+  { rank: 2, username: "maya_r",  totalXp: 6420 },
+  { rank: 3, username: "j_liu",   totalXp: 5010 },
 ];
 const DUMMY_ACT = [
-  { id: 1, username: "alex_k",  modeLabel: "Direct Mapping",     xpEarned: 420, accuracy: .96, ts: 120   },
-  { id: 2, username: "maya_r",  modeLabel: "Set-Associative",    xpEarned: 310, accuracy: .88, ts: 840   },
-  { id: 3, username: "j_liu",   modeLabel: "Direct Mapping",     xpEarned: 280, accuracy: .82, ts: 1860  },
+  { id: 1, username: "alex_k",  modeLabel: "Direct Mapping",     xpEarned: 420, accuracy: .96, ts: 120  },
+  { id: 2, username: "maya_r",  modeLabel: "Set-Associative",    xpEarned: 310, accuracy: .88, ts: 840  },
+  { id: 3, username: "j_liu",   modeLabel: "Direct Mapping",     xpEarned: 280, accuracy: .82, ts: 1860 },
 ];
 
 function fmtTime(secsAgo) {
@@ -87,93 +90,114 @@ function fmtNum(n) { return typeof n === "number" ? n.toLocaleString() : "—"; 
    MAIN APP
 ═══════════════════════════════════════════════════════ */
 export default function App() {
-  const [view,       setView]       = useState("home"); // home | auth | game
+  const [view,       setView]       = useState("home");
   const [activeMode, setActiveMode] = useState(null);
 
   // Auth
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user,       setUser]       = useState(null);
 
-  // Remote data
+  // Remote public data
   const [stats,    setStats]    = useState(null);
   const [lbRows,   setLbRows]   = useState(DUMMY_LB);
   const [activity, setActivity] = useState(DUMMY_ACT);
 
-  // Local progress (persisted in localStorage so it survives refresh)
-  const [preScore,  setPreScore]  = useState(() => {
-    const v = localStorage.getItem("bw_pre_score");
-    return v !== null ? parseInt(v, 10) : null;
-  });
-  const [postScore, setPostScore] = useState(() => {
-    const v = localStorage.getItem("bw_post_score");
-    return v !== null ? parseInt(v, 10) : null;
-  });
-  const [modeProgress, setModeProgress] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("bw_mode_progress") || "{}"); }
-    catch { return {}; }
-  });
+  // User progress — all sourced from MongoDB via backend
+  const [preScore,      setPreScore]      = useState(null);
+  const [postScore,     setPostScore]     = useState(null);
+  const [modeProgress,  setModeProgress]  = useState({});
+  const [totalXp,       setTotalXp]       = useState(0);
+  const [userRank,      setUserRank]      = useState(null);
 
-  const preDone  = preScore  !== null;
-  const postDone = postScore !== null;
+  const preDone         = preScore  !== null;
+  const postDone        = postScore !== null;
   const allModesComplete = MODES.every(m => modeProgress[m.id]?.complete);
 
-  // Persist progress
-  useEffect(() => {
-    if (preScore  !== null) localStorage.setItem("bw_pre_score",  preScore);
-  }, [preScore]);
-  useEffect(() => {
-    if (postScore !== null) localStorage.setItem("bw_post_score", postScore);
-  }, [postScore]);
-  useEffect(() => {
-    localStorage.setItem("bw_mode_progress", JSON.stringify(modeProgress));
-  }, [modeProgress]);
+  // Load user-specific data from backend
+  const loadUserData = useCallback(async () => {
+    if (!hasToken()) return;
+    const [assessment, progress] = await Promise.all([
+      getAssessmentResults(),
+      apiFetch("/progress/me").catch(() => null),
+    ]);
+    if (assessment) {
+      setPreScore(assessment.pre?.score  ?? null);
+      setPostScore(assessment.post?.score ?? null);
+    }
+    if (progress) {
+      setModeProgress(progress.perMode || {});
+      setTotalXp(progress.totalXp || 0);
+      setUserRank(progress.rank   || null);
+    }
+  }, []);
 
-  // Auth check
+  // Auth check on mount
   useEffect(() => {
     if (!hasToken()) return;
     apiFetch("/auth/me")
-      .then(u => { setUser(u); setIsLoggedIn(true); })
+      .then(u => { setUser(u); setIsLoggedIn(true); loadUserData(); })
       .catch(() => clearToken());
-  }, []);
+  }, [loadUserData]);
 
-  // Stats + leaderboard + activity
-  const loadRemote = useCallback(() => {
+  // Public stats + leaderboard + activity
+  const loadAll = useCallback(() => {
     getStatsOverview().then(setStats).catch(() => {});
     apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {});
     getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {});
-  }, []);
+    loadUserData();
+  }, [loadUserData]);
 
-  useEffect(() => { loadRemote(); }, [loadRemote]);
-
-  // XP sum
-  const totalXp = Object.values(modeProgress).reduce((s, m) => s + (m.bestXp || 0), 0);
+  useEffect(() => { loadAll(); }, [loadAll]);
 
   // Mode unlock logic
   const modeUnlocked = (modeId) => {
-    if (!preDone) return false;
+    if (!preDone) return true;
     if (modeId === "direct")      return true;
     if (modeId === "set")         return !!modeProgress["direct"]?.complete;
     if (modeId === "associative") return !!modeProgress["set"]?.complete;
     return false;
   };
 
-  const handleGameFinish = (modeId, score, accuracy) => {
-    const prev = modeProgress[modeId] || {};
-    const bestXp = Math.max(prev.bestXp || 0, score);
-    const updated = {
-      ...modeProgress,
-      [modeId]: { ...prev, bestXp, plays: (prev.plays || 0) + 1, accuracy, complete: true },
-    };
-    setModeProgress(updated);
-    postProgress({ gameId: "cache", modeId, score, accuracy, xpEarned: score }).catch(() => {});
-    loadRemote();
+  const handleGameFinish = async (modeId, score, accuracy) => {
+    await postProgress({ gameId: "cache", modeId, score, accuracy, xpEarned: score });
+    loadAll();
     setView("home");
     setActiveMode(null);
   };
 
   const handleLogout = () => {
-    clearToken(); setIsLoggedIn(false); setUser(null); setView("home");
+    clearToken();
+    setIsLoggedIn(false);
+    setUser(null);
+    setPreScore(null);
+    setPostScore(null);
+    setModeProgress({});
+    setTotalXp(0);
+    setUserRank(null);
+    setView("home");
   };
+
+  /* ── PRE-TEST VIEW ── */
+  if (view === "pretest") {
+    return (
+      <PreAssessment
+        type="pre"
+        onBack={() => setView("home")}
+        onComplete={async () => { await loadUserData(); setView("home"); }}
+      />
+    );
+  }
+
+  /* ── POST-TEST VIEW ── */
+  if (view === "posttest") {
+    return (
+      <PreAssessment
+        type="post"
+        onBack={() => setView("home")}
+        onComplete={async () => { await loadUserData(); setView("home"); }}
+      />
+    );
+  }
 
   /* ── GAME VIEW ── */
   if (view === "game" && activeMode) {
@@ -193,14 +217,16 @@ export default function App() {
       <LoginPage
         onBack={() => setView("home")}
         onLoginSuccess={(u) => {
-          setUser(u); setIsLoggedIn(true); setView("home");
+          setUser(u); setIsLoggedIn(true);
+          loadUserData();
+          setView("home");
         }}
       />
     );
   }
 
   /* ── HOME VIEW ── */
-  const top1Xp = lbRows[0]?.totalXp || 1;
+  const top1Xp  = lbRows[0]?.totalXp || 1;
   const myLbRow = isLoggedIn ? lbRows.find(r => r.username === user?.username) : null;
 
   return (
@@ -230,8 +256,7 @@ export default function App() {
             </>
           ) : (
             <>
-              <button className="bw-btn bw-btn-outline"  onClick={() => setView("auth")}>Log in</button>
-              <button className="bw-btn bw-btn-primary"  onClick={() => setView("auth")}>Get started</button>
+              <button className="bw-btn bw-btn-outline" onClick={() => setView("auth")}>Log in</button>
             </>
           )}
         </div>
@@ -246,8 +271,13 @@ export default function App() {
             <p>Take a short pre-assessment, then play through three cache mapping modes — direct, set-associative, and fully associative. Retake the quiz after to see how much you learned.</p>
             <div className="bw-hero-btns">
               {!preDone
-                ? <button className="bw-btn-hero-white" onClick={() => alert("Pre-assessment coming soon!")}>Take pre-assessment →</button>
-                : <button className="bw-btn-hero-white" onClick={() => { const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete); if (m) { setActiveMode(m.id); setView("game"); } }}>
+                ? <button className="bw-btn-hero-white" onClick={() => isLoggedIn ? setView("pretest") : setView("auth")}>
+                    {isLoggedIn ? "Take pre-assessment →" : "Log in to start →"}
+                  </button>
+                : <button className="bw-btn-hero-white" onClick={() => {
+                    const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete);
+                    if (m) { setActiveMode(m.id); setView("game"); }
+                  }}>
                     {allModesComplete ? "Replay a mode →" : "Continue playing →"}
                   </button>
               }
@@ -257,25 +287,6 @@ export default function App() {
             </div>
           </div>
           <div className="bw-hero-icon">🖥️</div>
-        </div>
-
-        {/* STATS */}
-        <div className="bw-stat-row">
-          <div className="bw-stat-chip">
-            <div className="bw-stat-chip-icon">🎮</div>
-            <div className="bw-stat-chip-val">{stats ? fmtNum(stats.plays) : "—"}</div>
-            <div className="bw-stat-chip-lbl">Games completed</div>
-          </div>
-          <div className="bw-stat-chip">
-            <div className="bw-stat-chip-icon">⭐</div>
-            <div className="bw-stat-chip-val">{stats ? fmtNum(stats.totalXp) : "—"}</div>
-            <div className="bw-stat-chip-lbl">XP awarded</div>
-          </div>
-          <div className="bw-stat-chip">
-            <div className="bw-stat-chip-icon">🎯</div>
-            <div className="bw-stat-chip-val">{stats?.avgAccuracy != null ? `${Math.round(stats.avgAccuracy * 100)}%` : "—"}</div>
-            <div className="bw-stat-chip-lbl">Avg accuracy</div>
-          </div>
         </div>
 
         {/* HOW IT WORKS */}
@@ -325,8 +336,8 @@ export default function App() {
               <div className="bw-pre-title">Pre-assessment — 10 questions · ~5 min</div>
               <div className="bw-pre-sub">Tests your existing knowledge of cache mapping. Your score is saved and compared to your post-assessment after playing — so you can see exactly how much you learned.</div>
             </div>
-            <button className="bw-btn-pre" onClick={() => alert("Pre-assessment coming soon!")}>
-              Start quiz →
+            <button className="bw-btn-pre" onClick={() => isLoggedIn ? setView("pretest") : setView("auth")}>
+              {isLoggedIn ? "Start quiz →" : "Log in to start →"}
             </button>
           </div>
         )}
@@ -405,32 +416,58 @@ export default function App() {
             </div>
           </div>
           {allModesComplete && !postDone
-            ? <button className="bw-btn-pre" onClick={() => alert("Post-assessment coming soon!")}>Start →</button>
+            ? <button className="bw-btn-pre" onClick={() => setView("posttest")}>Start →</button>
             : <div className="bw-post-strip-badge">
                 {postDone ? `+${postScore - preScore} improvement` : allModesComplete ? "Ready!" : `${Object.keys(modeProgress).filter(k => modeProgress[k]?.complete).length} of 3 done`}
               </div>
           }
         </div>
 
-        {/* PROGRESS (only when logged in or there's local data) */}
-        {(isLoggedIn || Object.keys(modeProgress).length > 0) && (
+        {/* PROGRESS (only when logged in with data) */}
+        {isLoggedIn && (preDone || Object.keys(modeProgress).length > 0) && (
           <>
             <div className="bw-progress-title">Your progress</div>
 
+            {/* STATS */}
+            <div className="bw-stat-row">
+              <div className="bw-stat-chip">
+                <div className="bw-stat-chip-icon">🎮</div>
+                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.plays) : "—"}</div>
+                <div className="bw-stat-chip-lbl">Games completed</div>
+              </div>
+              <div className="bw-stat-chip">
+                <div className="bw-stat-chip-icon">⭐</div>
+                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.totalXp) : "—"}</div>
+                <div className="bw-stat-chip-lbl">XP awarded</div>
+              </div>
+              <div className="bw-stat-chip">
+                <div className="bw-stat-chip-icon">🎯</div>
+                <div className="bw-stat-chip-val">{stats?.avgAccuracy != null ? `${Math.round(stats.avgAccuracy * 100)}%` : "—"}</div>
+                <div className="bw-stat-chip-lbl">Avg accuracy</div>
+              </div>
+            </div>
+
             {/* Rank hero */}
-            {myLbRow && (
+            {userRank && (
               <div className="bw-rank-hero">
                 <div className="bw-rank-box">
-                  <div className="bw-rank-num">#{myLbRow.rank}</div>
+                  <div className="bw-rank-num">#{userRank}</div>
                   <div className="bw-rank-lbl">RANK</div>
                 </div>
                 <div className="bw-rank-text">
-                  <div className="bw-rank-title">You're rank #{myLbRow.rank}!</div>
+                  <div className="bw-rank-title">You're rank #{userRank}!</div>
                   <div className="bw-rank-sub">
-                    {myLbRow.rank === 1 ? "👑 You're leading the class." : `${fmtNum(lbRows[myLbRow.rank - 2]?.totalXp - myLbRow.totalXp)} XP from rank #${myLbRow.rank - 1}.`}
+                    {userRank === 1
+                      ? "👑 You're leading the class."
+                      : myLbRow
+                        ? `${fmtNum((lbRows[myLbRow.rank - 2]?.totalXp ?? 0) - totalXp)} XP from rank #${userRank - 1}.`
+                        : "Keep playing to climb the leaderboard!"}
                   </div>
                 </div>
-                <button className="bw-btn-keep-playing" onClick={() => { const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete); if (m) { setActiveMode(m.id); setView("game"); } }}>
+                <button className="bw-btn-keep-playing" onClick={() => {
+                  const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete);
+                  if (m) { setActiveMode(m.id); setView("game"); }
+                }}>
                   Keep playing →
                 </button>
               </div>
@@ -470,8 +507,7 @@ export default function App() {
                 {MODES.map(mode => {
                   const prog = modeProgress[mode.id];
                   if (!prog) return null;
-                  const maxXp = 1000; // 10 questions × 100 XP
-                  const pct = Math.min(100, Math.round((prog.bestXp || 0) / maxXp * 100));
+                  const pct = Math.min(100, Math.round((prog.bestXp || 0) / mode.maxXp * 100));
                   return (
                     <div key={mode.id} className="bw-mode-prog-row">
                       <div className="bw-mp-top">
@@ -567,12 +603,6 @@ export default function App() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* TIP */}
-        <div className="bw-tip">
-          <div className="bw-tip-icon">💡</div>
-          <span>XP is based on your <strong>best run</strong> — replaying a mode can only help your score. Complete all three modes to unlock the post-assessment and see your improvement.</span>
         </div>
 
       </main>

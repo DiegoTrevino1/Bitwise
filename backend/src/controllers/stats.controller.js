@@ -1,32 +1,30 @@
-const db = require('../db');
+const { collections } = require('../db');
 
-const overviewQuery = db.prepare(
-  `SELECT
-     (SELECT COUNT(*) FROM users)                                AS users,
-     (SELECT COUNT(*) FROM play_sessions)                        AS plays,
-     (SELECT COALESCE(SUM(xp_earned), 0) FROM play_sessions)     AS total_xp,
-     (SELECT COALESCE(AVG(accuracy), 0) FROM play_sessions)      AS avg_accuracy`
-);
+async function overview(req, res) {
+  const { users, sessions } = collections();
 
-const topScorerQuery = db.prepare(
-  `SELECT u.username, COALESCE(SUM(s.xp_earned), 0) AS total_xp
-   FROM users u
-   LEFT JOIN play_sessions s ON s.user_id = u.id
-   GROUP BY u.id
-   ORDER BY total_xp DESC, u.id ASC
-   LIMIT 1`
-);
+  const [userCount, sessionAgg, topUser] = await Promise.all([
+    users.countDocuments(),
+    sessions.aggregate([
+      { $group: {
+        _id:         null,
+        plays:       { $sum: 1 },
+        totalXp:     { $sum: '$xpEarned' },
+        avgAccuracy: { $avg: '$accuracy' },
+      }},
+    ]).toArray(),
+    users.findOne({}, { sort: { totalXp: -1 }, projection: { username: 1, totalXp: 1 } }),
+  ]);
 
-function overview(req, res) {
-  const row = overviewQuery.get();
-  const top = topScorerQuery.get();
+  const agg = sessionAgg[0] || { plays: 0, totalXp: 0, avgAccuracy: 0 };
+
   return res.json({
-    users: row.users,
-    plays: row.plays,
-    totalXp: row.total_xp,
-    avgAccuracy: Number(row.avg_accuracy.toFixed(4)),
-    topScorer: top && top.total_xp > 0
-      ? { username: top.username, totalXp: top.total_xp }
+    users:       userCount,
+    plays:       agg.plays,
+    totalXp:     agg.totalXp,
+    avgAccuracy: Number((agg.avgAccuracy || 0).toFixed(4)),
+    topScorer:   topUser && topUser.totalXp > 0
+      ? { username: topUser.username, totalXp: topUser.totalXp }
       : null,
   });
 }
