@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const { collections, ObjectId } = require('../db');
 const { sign } = require('../utils/jwt');
 

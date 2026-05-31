@@ -113,6 +113,14 @@ export default function App() {
   const postDone        = postScore !== null;
   const allModesComplete = MODES.every(m => modeProgress[m.id]?.complete);
 
+  // User-specific stats derived from modeProgress
+  const userPlays = Object.values(modeProgress).reduce((s, m) => s + (m.plays || 0), 0);
+  const userAccuracy = (() => {
+    const played = Object.values(modeProgress).filter(m => (m.plays || 0) > 0);
+    if (!played.length) return null;
+    return played.reduce((s, m) => s + (m.accuracy || 0), 0) / played.length;
+  })();
+
   // Load user-specific data from backend
   const loadUserData = useCallback(async () => {
     if (!hasToken()) return;
@@ -141,10 +149,12 @@ export default function App() {
 
   // Public stats + leaderboard + activity
   const loadAll = useCallback(() => {
-    getStatsOverview().then(setStats).catch(() => {});
-    apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {});
-    getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {});
-    loadUserData();
+    return Promise.all([
+      getStatsOverview().then(setStats).catch(() => {}),
+      apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {}),
+      getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {}),
+      loadUserData(),
+    ]);
   }, [loadUserData]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -160,7 +170,7 @@ export default function App() {
 
   const handleGameFinish = async (modeId, score, accuracy) => {
     await postProgress({ gameId: "cache", modeId, score, accuracy, xpEarned: score });
-    loadAll();
+    await loadAll();
     setView("home");
     setActiveMode(null);
   };
@@ -217,6 +227,8 @@ export default function App() {
       <LoginPage
         onBack={() => setView("home")}
         onLoginSuccess={(u) => {
+          setPreScore(null); setPostScore(null);
+          setModeProgress({}); setTotalXp(0); setUserRank(null);
           setUser(u); setIsLoggedIn(true);
           loadUserData();
           setView("home");
@@ -432,17 +444,17 @@ export default function App() {
             <div className="bw-stat-row">
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎮</div>
-                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.plays) : "—"}</div>
-                <div className="bw-stat-chip-lbl">Games completed</div>
+                <div className="bw-stat-chip-val">{fmtNum(userPlays)}</div>
+                <div className="bw-stat-chip-lbl">Games played</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">⭐</div>
-                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.totalXp) : "—"}</div>
-                <div className="bw-stat-chip-lbl">XP awarded</div>
+                <div className="bw-stat-chip-val">{fmtNum(totalXp)}</div>
+                <div className="bw-stat-chip-lbl">XP earned</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎯</div>
-                <div className="bw-stat-chip-val">{stats?.avgAccuracy != null ? `${Math.round(stats.avgAccuracy * 100)}%` : "—"}</div>
+                <div className="bw-stat-chip-val">{userAccuracy != null ? `${Math.round(userAccuracy * 100)}%` : "—"}</div>
                 <div className="bw-stat-chip-lbl">Avg accuracy</div>
               </div>
             </div>
