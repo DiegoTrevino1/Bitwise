@@ -4,6 +4,8 @@ import LoginPage from "./LoginPage";
 import LibraryCacheGame from "./LibraryCacheGame";
 import PreAssessment from "./PreAssessment";
 import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress, getAssessmentResults } from "./api";
+import { MODE_DESCRIPTIONS } from "./GameConfigs";
+const MODES = Object.values(MODE_DESCRIPTIONS);
 
 /* ─── AVATAR ─────────────────────────────────────────── */
 const PALETTE = [
@@ -25,47 +27,6 @@ function Avatar({ name, size = 28 }) {
   );
 }
 
-/* ─── MODES CONFIG ───────────────────────────────────── */
-const MODES = [
-  {
-    id: "associative",
-    label: "Fully Associative",
-    tag: "Mode 1 · Beginner",
-    color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
-    maxXp: 300,
-    desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
-    bits: [
-      { part: "tag",    cls: "bw-bit-tag",    role: "Compare ALL lines — miss if no stored tag matches" },
-      { part: "offset", cls: "bw-bit-offset", role: "Which byte within the cache line" },
-    ],
-  },
-  {
-    id: "direct",
-    label: "Direct Mapping",
-    tag: "Mode 2 · Intermediate",
-    color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
-    maxXp: 100,
-    desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
-    bits: [
-      { part: "tag",    cls: "bw-bit-tag",    role: "Verify correct data is loaded — miss if tags don't match" },
-      { part: "index",  cls: "bw-bit-index",  role: "Points to the exact cache line (one line only)" },
-      { part: "offset", cls: "bw-bit-offset", role: "Which byte within that cache line" },
-    ],
-  },
-  {
-    id: "set",
-    label: "Set-Associative",
-    tag: "Mode 3 · Advanced",
-    color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
-    maxXp: 200,
-    desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
-    bits: [
-      { part: "tag",    cls: "bw-bit-tag",    role: "Identify which row within the set — miss if no tags match" },
-      { part: "set",    cls: "bw-bit-set",    role: "Which set of lines this address belongs to" },
-      { part: "offset", cls: "bw-bit-offset", role: "Which byte within the cache line" },
-    ],
-  },
-];
 
 /* ─── DUMMY LEADERBOARD / ACTIVITY DATA ──────────────── */
 const DUMMY_LB = [
@@ -161,7 +122,7 @@ export default function App() {
 
   // Mode unlock logic
   const modeUnlocked = (modeId) => {
-    if (!preDone) return true;
+    if (!preDone) return false;
     if (modeId === "direct")      return true;
     if (modeId === "set")         return !!modeProgress["direct"]?.complete;
     if (modeId === "associative") return !!modeProgress["set"]?.complete;
@@ -379,11 +340,12 @@ export default function App() {
                 </div>
                 <div className="bw-mode-title" style={{ color: mode.colorDark }}>{mode.label}</div>
                 <div className="bw-mode-desc"  style={{ color: mode.colorDark, opacity: .75 }}>{mode.desc}</div>
+                
                 <div className="bw-mode-bits">
-                  {mode.bits.map(b => (
-                    <div key={b.part} className="bw-mode-bit-row">
-                      <span className={`bw-bit-badge ${b.cls}`}>{b.part}</span>
-                      <span style={{ color: mode.colorDark, opacity: .7 }}>{b.role}</span>
+                  {mode.bits.map((r) => (
+                    <div key={r.part} className="bw-mode-bit-row">
+                      <span className={`bw-bit-badge bw-bit-${r.part}`}>{r.part}</span>
+                      <span style={{ color: mode.colorDark, opacity: .7 }}>{r.role}</span>
                     </div>
                   ))}
                 </div>

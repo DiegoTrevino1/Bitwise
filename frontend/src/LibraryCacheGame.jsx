@@ -1,7 +1,30 @@
 import { useState } from "react";
 import "./LibraryCacheGame.css";
 import { postProgress } from "./api";
-import { CONFIGS } from "./GameConfigs";
+import { CONFIGS, MODE_INSTRUCTIONS, MODE_DESCRIPTIONS } from "./GameConfigs";
+
+function renderParts(parts) {
+  return parts.map((part, i) => {
+    if (typeof part === "string") return part;
+    if (part.badge)              return <span key={i} className={`lcg-instr-badge lcg-mc-badge-${part.badge}`}>{part.text}</span>;
+    if (part.strong !== undefined) return <strong key={i}>{part.strong}</strong>;
+    if (part.sub)                return <ul key={i}>{part.sub.map((s, j) => <li key={j}>{renderParts(s)}</li>)}</ul>;
+    return null;
+  });
+}
+
+function InstructionsPanel({ mode }) {
+  const steps = MODE_INSTRUCTIONS[mode];
+  if (!steps) return null;
+  return (
+    <div className="lcg-instructions">
+      <div className="lcg-instructions-title">How to answer</div>
+      <ol className="lcg-instructions-steps">
+        {steps.map((step, i) => <li key={i}>{renderParts(step)}</li>)}
+      </ol>
+    </div>
+  );
+}
 
 
 const DIRECT_DIFFICULTY_OPTIONS = [
@@ -261,7 +284,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
    MAIN COMPONENT
 ───────────────────────────────────────────────────────────── */
 
-export default function LibraryCacheGame({ onBack, onHome }) {
+export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
   const [activeMode,    setActiveMode]    = useState(null);
   const [pendingMode,   setPendingMode]   = useState(null);
   const [questions,     setQuestions]     = useState([]);
@@ -340,22 +363,17 @@ export default function LibraryCacheGame({ onBack, onHome }) {
         <div className="lcg-select-body">
           <div className="lcg-select-hero">
             <div className="lcg-select-eyebrow">Cache Mapping Game</div>
-            <h2 className="lcg-select-title">Choose a mapping mode</h2>
-            <p className="lcg-select-sub">Each mode teaches a different strategy. Concepts build — start with Direct Mapping.</p>
+            <h2 className="lcg-select-title">Choose a difficulty</h2>
+            <p className="lcg-select-sub">Pick how challenging you want this session to be.</p>
           </div>
           <div className="lcg-mode-grid">
-            {Object.values(CONFIGS).map((c) => (
+            {Object.values(CONFIGS).filter((c) => !initialMode || c.mode === initialMode).map((c) => (
               <button
                 key={c.id}
                 className="lcg-mode-card"
                 style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
-                onClick={() => {
-                  if (c.id === "direct") {
-                    setPendingMode("direct");
-                    setPhase("difficulty");
-                  } else {
-                    startMode(c.id);
-                  }
+                onClick={() => { 
+                startMode(c.id);
                 }}
               >
                 <div className="lcg-mc-label">{c.label}</div>
@@ -373,52 +391,14 @@ export default function LibraryCacheGame({ onBack, onHome }) {
             ))}
           </div>
           <div className="howto-panel">
-            <div className="howto-title">How to play</div>
-            <ol className="howto-steps">
-              <li>An address appears, colour-coded to show <strong>tag</strong>, <strong>index/set</strong>, and <strong>offset</strong> bits.</li>
-              <li>The current cache state is shown in the table on the right with any stored tags.</li>
-              <li>Use the address parts to decide which cache line this address belongs to, then click that row.</li>
-              <li>Press <em>Submit</em> to check. You'll see whether it was a <strong>hit</strong> (tag already matched) or a <strong>miss</strong> (must load), with a full explanation.</li>
-            </ol>
+            <InstructionsPanel mode={initialMode} />
           </div>
         </div>
       </div>
     );
   }
 
-  /* ── DIFFICULTY SELECT ── */
-  if (phase === "difficulty" && pendingMode === "direct") {
-    return (
-      <div className="lcg-shell">
-        <div className="lcg-topbar">
-          <button className="lcg-back-btn" onClick={() => { setPendingMode(null); setPhase("select"); }}>← Back</button>
-          <div className="lcg-topbar-title">Bitwise — Direct Mapping</div>
-          <button className="lcg-home-btn" onClick={onHome}>Home</button>
-        </div>
-        <div className="lcg-select-body">
-          <div className="lcg-select-hero">
-            <div className="lcg-select-eyebrow">Direct Mapping</div>
-            <h2 className="lcg-select-title">Choose difficulty</h2>
-            <p className="lcg-select-sub">Pick a direct-mapping challenge level. Medium varies cache size and address width, and Hard hides the labeled address fields.</p>
-          </div>
-          <div className="lcg-mode-grid">
-            {DIRECT_DIFFICULTY_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                className="lcg-mode-card"
-                style={{ "--mc": "#22c55e", "--mcl": "#f0fdf4", "--mcb": "#86efac", "--mcd": "#14532d" }}
-                onClick={() => startMode("direct", option.id)}
-              >
-                <div className="lcg-mc-label">{option.label}</div>
-                <p className="lcg-mc-desc">{option.description}</p>
-                <div className="lcg-mc-play">Start →</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   /* ── SUMMARY ── */
   if (phase === "summary") {
@@ -486,7 +466,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
                   <span className="lcg-decoded-badge lcg-decoded-tag">tag</span>
                   <code className="lcg-decoded-bin">{q.tagVal}</code>
                   <span className="lcg-decoded-role">
-                    {cfg.mode === "associative" ? "compare every cache line" : cfg.mode === "set" ? "identify row within its set" : "verify correct data is stored"}
+                    {cfg.mode === "associative" ? "Identify line by comparing tags" : cfg.mode === "set" ? "Identify row within its set" : "Verify correct data is stored"}
                   </span>
                 </div>
                 {cfg.setBits > 0 && (
@@ -510,9 +490,16 @@ export default function LibraryCacheGame({ onBack, onHome }) {
                 </div>
               </div>
             )}
+            {cfg.hideAddressLabels && cfg.mode === "direct" && (
+              <div className="lcg-decoded-rows">
+                <div className="lcg-decoded-row">
+                  <span>The memory size requires there to be {cfg.indexBits} index bits.</span>
+                </div>
+              </div>
+            )}
 
             <div className="lcg-question-prompt">
-              {cfg.hideAddressLabels && "The address parts are hidden in Hard mode."}
+              {cfg.hideAddressLabels && "The address parts are hidden in Hard mode. "}
               {cfg.mode === "direct" && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
               {cfg.mode === "set"         && "Which set does this address belong to? Click the line with the matching tag within that set."}
               {cfg.mode === "associative" && "Where can this address go? If a tag matches click that line — otherwise click cache miss"}
@@ -539,6 +526,8 @@ export default function LibraryCacheGame({ onBack, onHome }) {
               </button>
             </>
           )}
+
+          <InstructionsPanel mode={cfg.mode} />
 
           {feedback === "correct" && (
             <div className="lcg-feedback lcg-feedback-correct">
