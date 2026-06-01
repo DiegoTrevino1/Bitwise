@@ -13,111 +13,140 @@ const QUESTIONS = [
     id: 1,
     q: "What is a cache?",
     opts: [
-      "A small, fast memory that stores copies of frequently used data",
-      "A large, slow memory used for long-term storage",
-      "A type of CPU register",
-      "A network buffer",
+      "A large storage device for files",
+      "A small, fast memory that stores frequently used data",
+      "A network connection",
+      "A type of keyboard shortcut",
     ],
-    answer: 0,
-    explanation: "A cache is a small, fast memory placed between the CPU and main memory to speed up data access by storing copies of frequently used data.",
+    answer: 1,
+    explanation:
+      "A cache is a small and fast type of memory that stores data the CPU may need again soon.",
   },
+
   {
     id: 2,
-    q: "In direct-mapped cache, what do the index bits determine?",
+    q: "What is a cache hit?",
     opts: [
-      "Which byte within a cache line to read",
-      "Whether the data is valid",
-      "Which cache line the memory address maps to",
-      "The size of the cache",
+      "The cache was deleted",
+      "The data was found in the cache",
+      "The CPU stopped running",
+      "The cache is full",
     ],
-    answer: 2,
-    explanation: "In direct-mapped cache the index bits identify the exact cache line that a memory address maps to. Each address can only ever go in one line.",
+    answer: 1,
+    explanation:
+      "A cache hit means the data the CPU was looking for was already in the cache.",
   },
+
   {
     id: 3,
     q: "What is a cache miss?",
     opts: [
-      "When the CPU skips a cache line",
-      "When requested data is not found in the cache",
-      "When two addresses map to the same line",
-      "When the cache is full",
+      "The cache is turned off",
+      "The cache is damaged",
+      "The data was not found in the cache",
+      "The data was found in the cache",
     ],
-    answer: 1,
-    explanation: "A cache miss occurs when the CPU looks for data in the cache and it isn't there — the data must be fetched from slower main memory.",
+    answer: 2,
+    explanation:
+      "A cache miss means the data was not in the cache, so it has to be found somewhere else, like main memory.",
   },
+
   {
     id: 4,
-    q: "What is the role of the tag bits in direct-mapped cache?",
+    q: "What is a tag?",
     opts: [
-      "They point to the cache set",
-      "They select the byte within a cache line",
-      "They verify that the correct data is stored in the cache line",
-      "They determine the cache size",
+      "The actual data being stored",
+      "A type of cache",
+      "The size of the cache",
+      "A part of an address used to identify the data",
     ],
-    answer: 2,
-    explanation: "Tag bits are compared against the stored tag in the cache line to verify that the line actually holds the data for this address. A mismatch means a cache miss.",
+    answer: 3,
+    explanation:
+      "The tag helps check whether the data stored in the cache is the correct data for the address.",
   },
+
   {
     id: 5,
-    q: "In fully associative cache, where can a memory block be placed?",
+    q: "What is an index?",
     opts: [
-      "Only in the line determined by the index bits",
-      "Only in the set determined by the set bits",
-      "In any cache line",
-      "In the last cache line only",
+      "A cache replacement rule",
+      "A part of an address used to choose a cache location",
+      "The data stored in the cache",
+      "A part of an address used to choose a byte inside a block",
     ],
-    answer: 2,
-    explanation: "Fully associative cache has no index or set bits — a memory block can be placed in any available cache line. Every line's tag must be compared to check for a hit.",
+    answer: 1,
+    explanation:
+      "The index points to the cache line or set where the data should be checked.",
   },
+
   {
     id: 6,
-    q: "What do the offset bits in a memory address tell you?",
+    q: "What is an offset?",
     opts: [
-      "Which cache line to use",
-      "Which byte within a cache line to access",
-      "Whether there is a cache hit or miss",
-      "Which set of lines the address belongs to",
+      "A part of an address used to find a specific byte inside a block",
+      "A type of cache miss",
+      "A way to replace old data",
+      "A part of an address used to choose the cache line",
     ],
-    answer: 1,
-    explanation: "Offset bits identify the specific byte within a cache line. They are the same across all cache mapping strategies.",
+    answer: 0,
+    explanation:
+      "The offset tells which exact byte or position inside a cache block is being accessed.",
   },
+
   {
     id: 7,
-    q: "In set-associative cache, what do the set bits determine?",
+    q: "What does a direct-mapped cache do?",
     opts: [
-      "The exact cache line the data must go in",
-      "Which group (set) of cache lines this address belongs to",
-      "Whether the stored tag matches",
-      "The number of ways in the cache",
+      "It lets data go anywhere in the cache",
+      "It stores data permanently",
+      "It places each memory block in one specific cache location",
+      "It removes the need for main memory",
     ],
-    answer: 1,
-    explanation: "Set bits identify which set of lines an address belongs to. Once the set is found, the data can go in any line within that set — that's where the 'associative' part comes in.",
+    answer: 2,
+    explanation:
+      "In direct mapping, each memory block can only go to one specific cache line.",
   },
+
   {
     id: 8,
-    q: "A cache has 4 lines and uses direct mapping. An address has index bits '10'. Which line does it map to?",
-    opts: ["Line 0", "Line 1", "Line 2", "Line 3"],
-    answer: 2,
-    explanation: "Binary '10' = decimal 2, so the address maps to Line 2.",
+    q: "What does a fully associative cache do?",
+    opts: [
+      "It only lets data go to one cache line",
+      "It stores data on the hard drive",
+      "It does not use tags",
+      "It lets data be placed in any cache line",
+    ],
+    answer: 3,
+    explanation:
+      "A fully associative cache is flexible because a memory block can be placed in any cache line.",
   },
+
   {
     id: 9,
-    q: "Which cache mapping strategy is the most flexible about where data can be placed?",
+    q: "What does a set-associative cache do?",
     opts: [
-      "Direct-mapped",
-      "Set-associative",
-      "Fully associative",
-      "They are all equally flexible",
+      "It lets data go into a small group of possible cache lines",
+      "It stores data permanently",
+      "It lets data go into every cache line at once",
+      "It lets data go into only one exact cache line",
     ],
-    answer: 2,
-    explanation: "Fully associative is the most flexible — data can go in any line. Direct-mapped is the least flexible (only one possible line per address).",
+    answer: 0,
+    explanation:
+      "A set-associative cache gives each memory block a set, and the block can go into one of the lines inside that set.",
   },
+
   {
     id: 10,
-    q: "In a set-associative cache with 4 sets and 2 ways each, how many total cache lines are there?",
-    opts: ["2", "4", "6", "8"],
-    answer: 3,
-    explanation: "4 sets × 2 ways = 8 total cache lines.",
+    q: "Why is cache memory useful?",
+    opts: [
+      "It replaces all RAM",
+      "It increases hard drive space",
+      "It helps the CPU access data faster",
+      "It makes files permanent",
+    ],
+    answer: 2,
+    explanation:
+      "Cache memory is useful because it helps the CPU quickly access data that is used often.",
   },
 ];
 
