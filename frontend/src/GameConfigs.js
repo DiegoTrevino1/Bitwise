@@ -1,3 +1,44 @@
+export const MODE_DESCRIPTIONS = {
+  associative: {
+    id: "associative",
+    label: "Fully Associative",
+    tag: "Mode 1 · Beginner",
+    color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
+    maxXp: 100,
+    desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
+    bits: [
+      { part: "tag", role: "Compare ALL lines — miss if no stored tag matches" },
+      { part: "offset", role: "Which byte within the cache line" },
+    ],
+  },
+  direct: {
+    id: "direct",
+    label: "Direct Mapping",
+    tag: "Mode 2 · Intermediate",
+    color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
+    maxXp: 200,
+    desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
+    bits: [
+      { part: "tag", role: "Verify correct data is loaded — miss if tags don't match" },
+      { part: "index", role: "Points to the exact cache line (one line only)" },
+      { part: "offset", role: "Which byte within that cache line" },
+    ]
+  },
+  set: {
+    id: "set",
+    label: "Set-Associative",
+    tag: "Mode 3 · Advanced",
+    color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
+    maxXp: 300,
+    desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
+    bits: [
+      { part: "tag", role: "Identify which row within the set — miss if no tags match" },
+      { part: "set", role: "Which set of lines this address belongs to" },
+      { part: "offset", role: "Which byte within the cache line" },
+    ]
+  } 
+}
+
 export const CONFIGS = {
   associativeEasy: {
     id: "associativeEasy",
@@ -13,13 +54,10 @@ export const CONFIGS = {
     setBits: 0,
     offsetBits: 1,
     totalBits: 8,
-    description: "Memory can be placed in any cache line — there are no index or set bits. Every tag in every line must be compared on each lookup. A miss only occurs when no stored tag matches.",
-    rules: [
-      { part: "tag",    role: "Compare ALL lines — if no stored tag matches → cache miss" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.associative.desc,
+    rules: MODE_DESCRIPTIONS.associative.bits,
   },
-   associativeMedium: {
+  associativeMedium: {
     id: "associativeMedium",
     mode: "associative",
     label: "Fully Associative Medium",
@@ -31,15 +69,12 @@ export const CONFIGS = {
     tagBits: 7,
     indexBits: 0,
     setBits: 0,
-    offsetBits: 1,
-    totalBits: 8,
-    description: "Memory can be placed in any cache line — there are no index or set bits. Every tag in every line must be compared on each lookup. A miss only occurs when no stored tag matches.",
-    rules: [
-      { part: "tag",    role: "Compare ALL lines — if no stored tag matches → cache miss" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    offsetBits: 2,
+    totalBits: 9,
+    description: MODE_DESCRIPTIONS.associative.desc,
+    rules: MODE_DESCRIPTIONS.associative.bits,
   },
-   associativeHard: {
+  associativeHard: {
     id: "associativeHard",
     mode: "associative",
     label: "Fully Associative Hard",
@@ -51,14 +86,11 @@ export const CONFIGS = {
     tagBits: 7,
     indexBits: 0,
     setBits: 0,
-    offsetBits: 1,
-    totalBits: 8,
+    offsetBits: 2,
+    totalBits: 9,
     hideAddressLabels: true,
-    description: "Memory can be placed in any cache line — there are no index or set bits. Every tag in every line must be compared on each lookup. A miss only occurs when no stored tag matches.",
-    rules: [
-      { part: "tag",    role: "Compare ALL lines — if no stored tag matches → cache miss" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.associative.desc,
+    rules: MODE_DESCRIPTIONS.associative.bits,
   },
   directEasy: {
     id: "directEasy",
@@ -76,12 +108,8 @@ export const CONFIGS = {
     setBits: 0,
     offsetBits: 1,
     totalBits: 8,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.direct.desc,
+    rules: MODE_DESCRIPTIONS.direct.bits,
   },
   directMedium: {
     id: "directMedium",
@@ -99,12 +127,8 @@ export const CONFIGS = {
     setBits: 0,
     offsetBits: 2,
     totalBits: 10,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.direct.desc,
+    rules: MODE_DESCRIPTIONS.direct.bits,
   },
   directHard: {
     id: "directHard",
@@ -123,12 +147,8 @@ export const CONFIGS = {
     offsetBits: 2,
     totalBits: 11,
     hideAddressLabels: true,
-    description: "Each memory address maps to exactly one cache line determined by the index bits. Use the index to find the line, then check the tag to confirm it holds the right data.",
-    rules: [
-      { part: "tag",    role: "Verify: does the stored tag match? If not → cache miss" },
-      { part: "index",  role: "Locate: the one and only line this address can occupy" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.direct.desc,
+    rules: MODE_DESCRIPTIONS.direct.bits,
   },
   setEasy: {
     id: "setEasy",
@@ -146,12 +166,8 @@ export const CONFIGS = {
     setBits: 2,
     offsetBits: 1,
     totalBits: 8,
-    description: "The cache is split into sets, each holding multiple lines. Set bits identify which set this address belongs to. The data can be placed in any line within that set. Tag bits identify which specific line holds the data.",
-    rules: [
-      { part: "tag",    role: "Identify: which line in the set holds this data — miss if no tags match" },
-      { part: "set",    role: "Locate: which set of lines this address belongs to" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.set.desc,
+    rules: MODE_DESCRIPTIONS.set.bits,
   },
   setMedium: {
     id: "setMedium",
@@ -169,12 +185,8 @@ export const CONFIGS = {
     setBits: 2,
     offsetBits: 1,
     totalBits: 8,
-    description: "The cache is split into sets, each holding multiple lines. Set bits identify which set this address belongs to. The data can be placed in any line within that set. Tag bits identify which specific line holds the data.",
-    rules: [
-      { part: "tag",    role: "Identify: which line in the set holds this data — miss if no tags match" },
-      { part: "set",    role: "Locate: which set of lines this address belongs to" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.set.desc,
+    rules: MODE_DESCRIPTIONS.set.bits,
   },
   setHard: {
     id: "setHard",
@@ -184,19 +196,80 @@ export const CONFIGS = {
     colorLight: "#fffbeb",
     colorBorder: "#fbbf24",
     colorDark: "#78350f",
-    lines: 8,
+    lines: 12,
     sets: 4,
-    waysPerSet: 2,
+    waysPerSet: 3,
     tagBits: 5,
     setBits: 2,
     offsetBits: 1,
     totalBits: 8,
     hideAddressLabels: true,
-    description: "The cache is split into sets, each holding multiple lines. Set bits identify which set this address belongs to. The data can be placed in any line within that set. Tag bits identify which specific line holds the data.",
-    rules: [
-      { part: "tag",    role: "Identify: which line in the set holds this data — miss if no tags match" },
-      { part: "set",    role: "Locate: which set of lines this address belongs to" },
-      { part: "offset", role: "Select: which byte within the cache line" },
-    ],
+    description: MODE_DESCRIPTIONS.set.desc,
+    rules: MODE_DESCRIPTIONS.set.bits,
   },
+};
+
+
+
+// Each step is an array of parts:
+//   string                                        → plain text
+//   { badge: "tag"|"index"|"set"|"offset", text } → coloured badge
+//   { strong: string }                            → bold text
+//   { sub: part[][] }                             → nested sub-list
+export const MODE_INSTRUCTIONS = {
+  direct: [
+    [
+      "Extract the ", { badge: "offset", text: "offset" }, " bits.",
+      { sub: [
+        ["The block size tells you how many offset bits are needed."],
+      ]},
+    ],
+    [
+      "Extract the ", { badge: "index", text: "index" }, " bits.",
+      { sub: [
+        ["Determined by the number of lines in the cache."],
+        ["Take index value modulo the number of cache lines to get the target line."],
+      ]},
+    ],
+    [
+      "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
+    ],
+    ["Compare the address ", { badge: "tag", text: "tag" }, " to the stored tag on that line."],
+    ["Tags match → ", { strong: "cache hit" }, ". Click the correct byte in that row."],
+    ["Tags differ → click ", { strong: "Cache miss" }, "."],
+  ],
+  set: [
+    [
+      "Extract the ", { badge: "offset", text: "offset" }, " bits.",
+      { sub: [
+        ["The block size tells you how many offset bits are needed."],
+      ]},
+    ],
+    [
+      "Extract the ", { badge: "set", text: "set" }, " bits.",
+      { sub: [
+        ["The number of sets tells you how many set bits are needed."],
+      ]},
+    ],
+    [
+      "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
+    ],
+    ["Check every line in that set for a matching ", { badge: "tag", text: "tag" }, "."],
+    ["A tag matches → ", { strong: "cache hit" }, ". Click that line."],
+    ["No tag matches → click ", { strong: "Cache miss" }, "."],
+  ],
+  associative: [
+    [
+      "Extract the ", { badge: "offset", text: "offset" }, " bits.",
+      { sub: [
+        ["The block size tells you how many offset bits are needed."],
+      ]},
+    ],
+    [
+      "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
+    ],
+    ["Scan ", { strong: "every" }, " cache line for a matching ", { badge: "tag", text: "tag" }, "."],
+    ["A tag matches → ", { strong: "cache hit" }, ". Click that line."],
+    ["No tag matches anywhere → click ", { strong: "Cache miss" }, "."],
+  ],
 };
