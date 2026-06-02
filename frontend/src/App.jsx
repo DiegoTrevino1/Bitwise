@@ -7,7 +7,7 @@ import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, po
 
 /* ─── AVATAR ─────────────────────────────────────────── */
 const PALETTE = [
-  "#0057ff","#8b5cf6","#22c55e","#f59e0b","#ef4444","#06b6d4","#f97316","#ec4899",
+  "#0057ff","#8b5cf6","#47a201","#f59e0b","#ef4444","#06b6d4","#f97316","#ec4899",
 ];
 function avatarColor(name) {
   if (!name) return PALETTE[0];
@@ -31,7 +31,7 @@ const MODES = [
     id: "associative",
     label: "Fully Associative",
     tag: "Mode 1 · Beginner",
-    color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
+    color: "#8b5cf6", colorLight: "#edeafc", colorBorder: "#8f74fa", colorDark: "#4c1d95",
     maxXp: 300,
     desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
     bits: [
@@ -43,7 +43,7 @@ const MODES = [
     id: "direct",
     label: "Direct Mapping",
     tag: "Mode 2 · Intermediate",
-    color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
+    color: "#47a201", colorLight: "#f0fbe5", colorBorder: "#06a342", colorDark: "#2f6f01",
     maxXp: 100,
     desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
     bits: [
@@ -56,7 +56,7 @@ const MODES = [
     id: "set",
     label: "Set-Associative",
     tag: "Mode 3 · Advanced",
-    color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
+    color: "#f59e0b", colorLight: "#fcf5d7", colorBorder: "#fbbf24", colorDark: "#78350f",
     maxXp: 200,
     desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
     bits: [
@@ -272,17 +272,17 @@ export default function App() {
             <div className="bw-hero-btns">
               {!preDone
                 ? <button className="bw-btn-hero-white" onClick={() => isLoggedIn ? setView("pretest") : setView("auth")}>
-                    {isLoggedIn ? "Take pre-assessment →" : "Log in to start →"}
+                    {isLoggedIn ? "Take Pre-Assessment →" : "Log in to Start →"}
                   </button>
                 : <button className="bw-btn-hero-white" onClick={() => {
                     const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete);
                     if (m) { setActiveMode(m.id); setView("game"); }
                   }}>
-                    {allModesComplete ? "Replay a mode →" : "Continue playing →"}
+                    {allModesComplete ? "Replay a Mode →" : "Continue Playing →"}
                   </button>
               }
               <button className="bw-btn-hero-outline" onClick={() => document.getElementById("bw-lb")?.scrollIntoView({ behavior: "smooth" })}>
-                View leaderboard
+                View Leaderboard
               </button>
             </div>
           </div>
@@ -296,17 +296,17 @@ export default function App() {
         <div className="bw-how-grid">
           <div className="bw-how-card">
             <div className="bw-how-icon" style={{ background: "#fef3c7", borderColor: "#fbbf24" }}>📋</div>
-            <div className="bw-how-title">1. Pre-assessment</div>
+            <div className="bw-how-title">1. Pre-Assessment</div>
             <div className="bw-how-desc">A short quiz measuring what you already know about cache mapping. Your score is saved for comparison.</div>
           </div>
           <div className="bw-how-card">
-            <div className="bw-how-icon" style={{ background: "#f0fdf4", borderColor: "#86efac" }}>🎮</div>
-            <div className="bw-how-title">2. Play the game</div>
+            <div className="bw-how-icon" style={{ background: "#f0fdf4", borderColor: "#06a342" }}>🎮</div>
+            <div className="bw-how-title">2. Play the Game</div>
             <div className="bw-how-desc">Work through three cache mapping modes — direct, set-associative, and fully associative. Learn by doing.</div>
           </div>
           <div className="bw-how-card">
             <div className="bw-how-icon" style={{ background: "#eff6ff", borderColor: "#93c5fd" }}>🏆</div>
-            <div className="bw-how-title">3. Post-assessment</div>
+            <div className="bw-how-title">3. Post-Assessment</div>
             <div className="bw-how-desc">Retake the same quiz after playing. Compare your scores to see exactly how much the game taught you.</div>
           </div>
         </div>
@@ -317,7 +317,7 @@ export default function App() {
             {preDone ? "✓" : "1"}
           </div>
           <div className={`bw-step-label ${preDone ? "bw-step-label-done" : "bw-step-label-active"}`}>
-            {preDone ? "Pre-assessment complete" : "Start here — take the pre-assessment"}
+            {preDone ? "Pre-assessment complete" : "Start Here — Take the Pre-Assessment"}
           </div>
         </div>
 
@@ -325,7 +325,7 @@ export default function App() {
           <div className="bw-pre-done">
             <div className="bw-pre-done-icon">✅</div>
             <div>
-              <div className="bw-pre-done-text">Pre-assessment complete — {preScore}/10</div>
+              <div className="bw-pre-done-text">Pre-Assessment Complete — {preScore}/10</div>
               <div className="bw-pre-done-sub">Games are unlocked. Complete all three modes to unlock the post-assessment.</div>
             </div>
           </div>
@@ -333,11 +333,11 @@ export default function App() {
           <div className="bw-pre-banner">
             <div className="bw-pre-icon">📋</div>
             <div className="bw-pre-body">
-              <div className="bw-pre-title">Pre-assessment — 10 questions · ~5 min</div>
+              <div className="bw-pre-title">Pre-Assessment — 10 questions · ~5 min</div>
               <div className="bw-pre-sub">Tests your existing knowledge of cache mapping. Your score is saved and compared to your post-assessment after playing — so you can see exactly how much you learned.</div>
             </div>
             <button className="bw-btn-pre" onClick={() => isLoggedIn ? setView("pretest") : setView("auth")}>
-              {isLoggedIn ? "Start quiz →" : "Log in to start →"}
+              {isLoggedIn ? "Start Quiz →" : "Log in to Start →"}
             </button>
           </div>
         )}
@@ -346,7 +346,7 @@ export default function App() {
         <div className="bw-step-row">
           <div className={`bw-step-num ${preDone ? "bw-step-num-active" : "bw-step-num-locked"}`}>2</div>
           <div className={`bw-step-label ${preDone ? "bw-step-label-active" : "bw-step-label-locked"}`}>
-            Play the game — three cache mapping modes
+            Play the Game — Three Cache Mapping Modes
             {preDone && <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400, marginLeft: 8 }}>Complete in order to unlock the next</span>}
           </div>
         </div>
@@ -399,7 +399,7 @@ export default function App() {
             {postDone ? "✓" : "3"}
           </div>
           <div className={`bw-step-label ${postDone ? "bw-step-label-done" : "bw-step-label-locked"}`}>
-            Post-assessment — {allModesComplete ? "ready to take!" : "unlocks after completing all three modes"}
+            Post-Assessment — {allModesComplete ? "Ready to Take!" : "Unlocks After Completing All Three Modes"}
           </div>
         </div>
 
@@ -407,7 +407,7 @@ export default function App() {
           <div className="bw-post-strip-icon">🏆</div>
           <div className="bw-post-strip-body">
             <div className="bw-post-strip-title">
-              {postDone ? "Post-assessment complete!" : "Post-assessment"}
+              {postDone ? "Post-Assessment Complete!" : "Post-Assessment"}
             </div>
             <div className="bw-post-strip-sub">
               {postDone

@@ -348,7 +348,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
               <button
                 key={c.id}
                 className="lcg-mode-card"
-                style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
+                style={{ "--mc": c.colorDark, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
                 onClick={() => {
                   if (c.id === "direct") {
                     setPendingMode("direct");
@@ -459,7 +459,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
       <div className="lcg-topbar">
         <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
         <div className="lcg-topbar-center">
-          <span className="lcg-topbar-mode" style={{ color: cfg.color }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
+          <span className="lcg-topbar-mode" style={{ color: cfg.colorBorder }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
           <div className="lcg-progress-track">
             <div className="lcg-progress-fill" style={{ width: `${(qIdx / questions.length) * 100}%`, background: cfg.color }} />
           </div>
@@ -512,7 +512,7 @@ export default function LibraryCacheGame({ onBack, onHome }) {
             )}
 
             <div className="lcg-question-prompt">
-              {cfg.hideAddressLabels && "The address parts are hidden in Hard mode."}
+              {cfg.hideAddressLabels && "The address parts are hidden in Hard mode. "}
               {cfg.mode === "direct" && "Which cache line and byte does this address map to? Click the correct byte in the cache table."}
               {cfg.mode === "set"         && "Which set does this address belong to? Click the line with the matching tag within that set."}
               {cfg.mode === "associative" && "Where can this address go? If a tag matches click that line — otherwise click cache miss"}
