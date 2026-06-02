@@ -120,13 +120,17 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Mode unlock logic
+  // Mode unlock logic — previous mode must have best accuracy >= 80%
+  const UNLOCK_THRESHOLD = 0.8;
+  const prevModeId = (modeId) => {
+    const idx = MODES.findIndex(m => m.id === modeId);
+    return idx > 0 ? MODES[idx - 1].id : null;
+  };
   const modeUnlocked = (modeId) => {
     if (!preDone) return false;
-    if (modeId === "direct")      return true;
-    if (modeId === "set")         return !!modeProgress["direct"]?.complete;
-    if (modeId === "associative") return !!modeProgress["set"]?.complete;
-    return false;
+    const prev = prevModeId(modeId);
+    if (!prev) return true; // first mode always unlocked after pre-assessment
+    return (modeProgress[prev]?.accuracy ?? 0) >= UNLOCK_THRESHOLD;
   };
 
   const handleGameFinish = async (modeId, score, accuracy) => {
@@ -357,11 +361,30 @@ export default function App() {
                   >
                     {done ? "↺ Replay" : "▶ Play now"}
                   </button>
-                ) : (
-                  <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color }}>
-                    🔒 {mode.id === "set" ? "Complete Mode 1 to unlock" : "Complete Mode 2 to unlock"}
-                  </div>
-                )}
+                ) : (() => {
+                  const prev = prevModeId(mode.id);
+                  const prevCfg = MODES.find(m => m.id === prev);
+                  const prevAcc = modeProgress[prev]?.accuracy ?? null;
+                  const played  = prevAcc !== null;
+                  return (
+                    <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color, flexDirection: "column", gap: 8 }}>
+                      <span>
+                        🔒 {played
+                          ? `Score 80%+ in ${prevCfg?.label} to unlock — best: ${Math.round(prevAcc * 100)}%`
+                          : `Complete ${prevCfg?.label} first`}
+                      </span>
+                      {played && (
+                        <button
+                          className="bw-mode-play-btn"
+                          style={{ background: prevCfg?.color, fontSize: 12, padding: "7px 0" }}
+                          onClick={() => { setActiveMode(prev); setView("game"); }}
+                        >
+                          ↺ Retry {prevCfg?.label}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
