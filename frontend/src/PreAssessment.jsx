@@ -180,18 +180,17 @@ export default function PreAssessment({ type = "pre", onComplete, onBack }) {
   };
 
   const handleNext = async () => {
-    if (qIdx + 1 >= total) {
-      const finalAnswers = [...answers, selected === q.answer];
-      const score = finalAnswers.filter(Boolean).length;
-      // Save to backend (non-blocking — works offline too)
-      await submitAssessment(type, score, total);
-      onComplete(score);
-    } else {
-      setQIdx(i => i + 1);
-      setSelected(null);
-      setRevealed(false);
-    }
-  };
+  if (qIdx + 1 >= total) {
+    const score = Math.min(answers.filter(Boolean).length, total);
+
+    await submitAssessment(type, score, total);
+    onComplete(score);
+  } else {
+    setQIdx(i => i + 1);
+    setSelected(null);
+    setRevealed(false);
+  }
+};
 
   const isCorrect = revealed && selected === q.answer;
   const isWrong   = revealed && selected !== q.answer;
