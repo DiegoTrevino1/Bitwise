@@ -104,7 +104,6 @@ function generateQuestions(cfg, count = 10) {
         correctOffset = parseInt(offsetVal, 2);
         correctLine = lineIdx;
 
-        console.log(`Question ${i+1}: Line: ${lineIdx}, Initial tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
         //if the question should be a miss, change the tag so they don't match
         if (!isHit) {
           let tries = 0;
@@ -174,6 +173,8 @@ function generateQuestions(cfg, count = 10) {
         }
         break;
     }
+    //if the user is a test account, print the question details for debugging
+    console.log(`Question ${i+1}: Line: ${lineIdx}, offset: ${offsetVal}, tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
     questions[i] = {addr, tagVal, setVal, indexVal, offsetVal, correctLine, correctOffset, isHit, explanation, cacheSnapshot: cacheLines.map(l => ({ ...l }))};
   }
   return questions;

@@ -221,7 +221,7 @@ export const MODE_INSTRUCTIONS = {
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The block size tells you how many offset bits are needed."],
+        ["The amount of bytes per line tells you how many offset bits are needed."],
       ]},
     ],
     [
@@ -242,7 +242,7 @@ export const MODE_INSTRUCTIONS = {
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The block size tells you how many offset bits are needed."],
+        ["The amount of bytes per line tells you how many offset bits are needed."],
       ]},
     ],
     [
@@ -262,7 +262,7 @@ export const MODE_INSTRUCTIONS = {
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The block size tells you how many offset bits are needed."],
+        ["The amount of bytes per line tells you how many offset bits are needed."],
       ]},
     ],
     [
