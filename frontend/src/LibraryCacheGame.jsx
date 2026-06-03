@@ -112,7 +112,6 @@ function generateQuestions(cfg, count = 10) {
             tries += 1;
           } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
           addr = tagVal + indexVal + offsetVal; 
-          console.log(`new tagVal: ${tagVal}, new addr: ${addr}`);
           explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
         }
         else {
@@ -174,7 +173,7 @@ function generateQuestions(cfg, count = 10) {
         break;
     }
     //if the user is a test account, print the question details for debugging
-    console.log(`Question ${i+1}: Line: ${lineIdx}, offset: ${offsetVal}, tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
+    console.log(`Question ${i+1}: isHit: ${isHit} Line: ${lineIdx}, offset: ${parseInt(offsetVal, 2)}, tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, addr: ${addr}`);
     questions[i] = {addr, tagVal, setVal, indexVal, offsetVal, correctLine, correctOffset, isHit, explanation, cacheSnapshot: cacheLines.map(l => ({ ...l }))};
   }
   return questions;
@@ -327,7 +326,6 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
       return;
     }
     if (cfg.mode === "direct") {
-      console.log("Submition: selectedLine: ", selectedLine, "selectedOffset: ", selectedOffset, "correctLine: ", q.correctLine, "correctOffset: ", q.correctOffset);
       if (selectedLine === null || selectedOffset === null) return;
       const isCorrect = q.correctLine === selectedLine && selectedOffset === q.correctOffset;
       setFeedback(isCorrect ? "correct" : "wrong");
@@ -342,7 +340,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
 
   const handleNext = () => {
     if (qIdx + 1 >= questions.length) {
-      postProgress({ gameId: "cache", modeId: cfg.id, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
+      postProgress({ gameId: "cache", modeId: cfg.mode, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
       setPhase("summary");
     } else {
       setQIdx((i) => i + 1);
@@ -428,7 +426,6 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
             </div>
             <div className="lcg-summary-actions">
               <button className="lcg-btn-retry" onClick={retry}>↺ Retry this mode</button>
-              <button className="lcg-btn-modes" onClick={() => setPhase("select")}>All modes</button>
               <button className="lcg-btn-home"  onClick={onHome}>Home</button>
             </div>
           </div>
