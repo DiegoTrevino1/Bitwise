@@ -1,4 +1,4 @@
-export const API = "http://localhost:4000/api";
+export const API = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
 const TOKEN_KEY = "bw_token";
 
 export function getToken()        { return localStorage.getItem(TOKEN_KEY); }

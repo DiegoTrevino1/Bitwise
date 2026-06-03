@@ -4,6 +4,8 @@ import LoginPage from "./LoginPage";
 import LibraryCacheGame from "./LibraryCacheGame";
 import PreAssessment from "./PreAssessment";
 import { apiFetch, hasToken, clearToken, getStatsOverview, getRecentActivity, postProgress, getAssessmentResults } from "./api";
+import { MODE_DESCRIPTIONS } from "./GameConfigs";
+const MODES = Object.values(MODE_DESCRIPTIONS);
 
 /* ─── AVATAR ─────────────────────────────────────────── */
 const PALETTE = [
@@ -31,7 +33,7 @@ const MODES = [
     id: "associative",
     label: "Fully Associative",
     tag: "Mode 1 · Beginner",
-    color: "#8b5cf6", colorLight: "#edeafc", colorBorder: "#8f74fa", colorDark: "#4c1d95",
+    color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
     maxXp: 300,
     desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
     bits: [
@@ -43,7 +45,7 @@ const MODES = [
     id: "direct",
     label: "Direct Mapping",
     tag: "Mode 2 · Intermediate",
-    color: "#47a201", colorLight: "#f0fbe5", colorBorder: "#06a342", colorDark: "#2f6f01",
+    color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
     maxXp: 100,
     desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
     bits: [
@@ -56,7 +58,7 @@ const MODES = [
     id: "set",
     label: "Set-Associative",
     tag: "Mode 3 · Advanced",
-    color: "#f59e0b", colorLight: "#fcf5d7", colorBorder: "#fbbf24", colorDark: "#78350f",
+    color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
     maxXp: 200,
     desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
     bits: [
@@ -113,6 +115,14 @@ export default function App() {
   const postDone        = postScore !== null;
   const allModesComplete = MODES.every(m => modeProgress[m.id]?.complete);
 
+  // User-specific stats derived from modeProgress
+  const userPlays = Object.values(modeProgress).reduce((s, m) => s + (m.plays || 0), 0);
+  const userAccuracy = (() => {
+    const played = Object.values(modeProgress).filter(m => (m.plays || 0) > 0);
+    if (!played.length) return null;
+    return played.reduce((s, m) => s + (m.accuracy || 0), 0) / played.length;
+  })();
+
   // Load user-specific data from backend
   const loadUserData = useCallback(async () => {
     if (!hasToken()) return;
@@ -141,26 +151,32 @@ export default function App() {
 
   // Public stats + leaderboard + activity
   const loadAll = useCallback(() => {
-    getStatsOverview().then(setStats).catch(() => {});
-    apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {});
-    getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {});
-    loadUserData();
+    return Promise.all([
+      getStatsOverview().then(setStats).catch(() => {}),
+      apiFetch("/leaderboard?limit=5").then(rows => { if (rows?.length) setLbRows(rows); }).catch(() => {}),
+      getRecentActivity(5).then(rows => { if (rows?.length) setActivity(rows); }).catch(() => {}),
+      loadUserData(),
+    ]);
   }, [loadUserData]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Mode unlock logic
+  // Mode unlock logic — previous mode must have best accuracy >= 80%
+  const UNLOCK_THRESHOLD = 0.8;
+  const prevModeId = (modeId) => {
+    const idx = MODES.findIndex(m => m.id === modeId);
+    return idx > 0 ? MODES[idx - 1].id : null;
+  };
   const modeUnlocked = (modeId) => {
-    if (!preDone) return true;
-    if (modeId === "direct")      return true;
-    if (modeId === "set")         return !!modeProgress["direct"]?.complete;
-    if (modeId === "associative") return !!modeProgress["set"]?.complete;
-    return false;
+    if (!preDone) return false;
+    const prev = prevModeId(modeId);
+    if (!prev) return true; // first mode always unlocked after pre-assessment
+    return (modeProgress[prev]?.accuracy ?? 0) >= UNLOCK_THRESHOLD;
   };
 
   const handleGameFinish = async (modeId, score, accuracy) => {
     await postProgress({ gameId: "cache", modeId, score, accuracy, xpEarned: score });
-    loadAll();
+    await loadAll();
     setView("home");
     setActiveMode(null);
   };
@@ -217,6 +233,8 @@ export default function App() {
       <LoginPage
         onBack={() => setView("home")}
         onLoginSuccess={(u) => {
+          setPreScore(null); setPostScore(null);
+          setModeProgress({}); setTotalXp(0); setUserRank(null);
           setUser(u); setIsLoggedIn(true);
           loadUserData();
           setView("home");
@@ -367,11 +385,12 @@ export default function App() {
                 </div>
                 <div className="bw-mode-title" style={{ color: mode.colorDark }}>{mode.label}</div>
                 <div className="bw-mode-desc"  style={{ color: mode.colorDark, opacity: .75 }}>{mode.desc}</div>
+                
                 <div className="bw-mode-bits">
-                  {mode.bits.map(b => (
-                    <div key={b.part} className="bw-mode-bit-row">
-                      <span className={`bw-bit-badge ${b.cls}`}>{b.part}</span>
-                      <span style={{ color: mode.colorDark, opacity: .7 }}>{b.role}</span>
+                  {mode.bits.map((r) => (
+                    <div key={r.part} className="bw-mode-bit-row">
+                      <span className={`bw-bit-badge bw-bit-${r.part}`}>{r.part}</span>
+                      <span style={{ color: mode.colorDark, opacity: .7 }}>{r.role}</span>
                     </div>
                   ))}
                 </div>
@@ -383,11 +402,30 @@ export default function App() {
                   >
                     {done ? "↺ Replay" : "▶ Play now"}
                   </button>
-                ) : (
-                  <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color }}>
-                    🔒 {mode.id === "set" ? "Complete Mode 1 to unlock" : "Complete Mode 2 to unlock"}
-                  </div>
-                )}
+                ) : (() => {
+                  const prev = prevModeId(mode.id);
+                  const prevCfg = MODES.find(m => m.id === prev);
+                  const prevAcc = modeProgress[prev]?.accuracy ?? null;
+                  const played  = prevAcc !== null;
+                  return (
+                    <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color, flexDirection: "column", gap: 8 }}>
+                      <span>
+                        🔒 {played
+                          ? `Score 80%+ in ${prevCfg?.label} to unlock — best: ${Math.round(prevAcc * 100)}%`
+                          : `Complete ${prevCfg?.label} first`}
+                      </span>
+                      {played && (
+                        <button
+                          className="bw-mode-play-btn"
+                          style={{ background: prevCfg?.color, fontSize: 12, padding: "7px 0" }}
+                          onClick={() => { setActiveMode(prev); setView("game"); }}
+                        >
+                          ↺ Retry {prevCfg?.label}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
@@ -432,17 +470,17 @@ export default function App() {
             <div className="bw-stat-row">
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎮</div>
-                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.plays) : "—"}</div>
-                <div className="bw-stat-chip-lbl">Games completed</div>
+                <div className="bw-stat-chip-val">{fmtNum(userPlays)}</div>
+                <div className="bw-stat-chip-lbl">Games played</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">⭐</div>
-                <div className="bw-stat-chip-val">{stats ? fmtNum(stats.totalXp) : "—"}</div>
-                <div className="bw-stat-chip-lbl">XP awarded</div>
+                <div className="bw-stat-chip-val">{fmtNum(totalXp)}</div>
+                <div className="bw-stat-chip-lbl">XP earned</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎯</div>
-                <div className="bw-stat-chip-val">{stats?.avgAccuracy != null ? `${Math.round(stats.avgAccuracy * 100)}%` : "—"}</div>
+                <div className="bw-stat-chip-val">{userAccuracy != null ? `${Math.round(userAccuracy * 100)}%` : "—"}</div>
                 <div className="bw-stat-chip-lbl">Avg accuracy</div>
               </div>
             </div>

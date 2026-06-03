@@ -47,10 +47,10 @@ async function summary(req, res) {
     sessions.aggregate([
       { $match: { userId } },
       { $group: {
-        _id:      '$modeId',
-        bestXp:   { $max: '$xpEarned' },
-        plays:    { $sum: 1 },
-        accuracy: { $avg: '$accuracy' },
+        _id:         '$modeId',
+        bestXp:      { $max: '$xpEarned' },
+        plays:       { $sum: 1 },
+        accuracy:    { $max: '$accuracy' },
       }},
     ]).toArray(),
     users.countDocuments(),
