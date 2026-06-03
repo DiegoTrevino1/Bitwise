@@ -3,10 +3,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --green:        #58cc02;
-  --green-dark:   #46a302;
-  --green-light:  #f0fde4;
-  --green-border: #86efac;
+  --green:        #47a201;
+  --green-dark:   #2f6f01;
+  --green-light:  #ddf9c3;
+  --green-border: #06a342;
   --yellow:       #f59e0b;
   --yellow-light: #fffbeb;
   --yellow-border:#fbbf24;
@@ -94,10 +94,10 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
 }
 .bw-hero h1 { font-size: clamp(22px, 1.9vw, 32px); font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 8px; letter-spacing: -0.02em; }
-.bw-hero p  { font-size: clamp(13px, 1vw, 15px); color: rgba(255,255,255,.85); line-height: 1.6; max-width: clamp(360px, 45%, 520px); }
+.bw-hero p  { font-size: clamp(16px, 1vw, 15px); color: rgba(255,255,255,.85); line-height: 1.6; max-width: clamp(360px, 45%, 520px); }
 .bw-hero-btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 .bw-hero-icon { font-size: 72px; line-height: 1; flex-shrink: 0; opacity: .9; }
-.bw-btn-hero-white   { padding: 10px 22px; border-radius: 999px; background: #fff; border: none; color: var(--green-dark); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.bw-btn-hero-white   { padding: 10px 22px; border-radius: 999px; background: #fff; border: none; color: var(--green); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; }
 .bw-btn-hero-white:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .bw-btn-hero-outline { padding: 10px 22px; border-radius: 999px; background: transparent; border: 2px solid rgba(255,255,255,.55); color: #fff; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
 .bw-btn-hero-outline:hover { background: rgba(255,255,255,.12); }
@@ -114,20 +114,20 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 
 /* ── SECTION LABEL ───────────────────────────────────── */
 .bw-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.bw-section-title { font-size: 16px; font-weight: 700; color: var(--gray-900); }
-.bw-section-sub   { font-size: 13px; color: var(--gray-500); }
+.bw-section-title { font-size: 21px; font-weight: 700; color: var(--gray-900); }
+/* .bw-section-sub   { font-size: 13px; color: var(--gray-500); } */
 
 /* ── STEP INDICATOR ──────────────────────────────────── */
 .bw-step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; margin-top: 32px; }
 .bw-step-num {
   width: 24px; height: 24px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
+  font-size: 15px; font-weight: 700; flex-shrink: 0;
 }
 .bw-step-num-active   { background: var(--yellow); color: #fff; }
 .bw-step-num-done     { background: var(--green);  color: #fff; }
 .bw-step-num-locked   { background: var(--gray-200); color: var(--gray-400); }
-.bw-step-label        { font-size: 13px; font-weight: 600; }
+.bw-step-label        { font-size: 19px; font-weight: 600; }
 .bw-step-label-active { color: var(--gray-900); }
 .bw-step-label-locked { color: var(--gray-400); }
 .bw-step-label-done   { color: var(--gray-500); }
@@ -144,8 +144,8 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   display: flex; align-items: center; justify-content: center; font-size: 26px;
 }
 .bw-pre-body { flex: 1; }
-.bw-pre-title { font-size: 14px; font-weight: 700; color: var(--yellow-dark); margin-bottom: 3px; }
-.bw-pre-sub   { font-size: 13px; color: #92400e; line-height: 1.55; }
+.bw-pre-title { font-size: 16px; font-weight: 700; color: var(--yellow-dark); margin-bottom: 3px; }
+.bw-pre-sub   { font-size: 15px; color: #92400e; line-height: 1.55; }
 .bw-btn-pre {
   padding: 10px 20px; border-radius: 999px; background: var(--yellow);
   border: none; color: #fff; font-family: var(--sans); font-size: 13px; font-weight: 700;
@@ -156,7 +156,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 /* Pre-assessment done */
 .bw-pre-done {
   display: flex; align-items: center; gap: 12px;
-  background: var(--green-light); border: 2px solid var(--green-border);
+  background: var(--gray-50); border: 2px solid var(--green-border);
   border-radius: var(--radius); padding: 12px 18px; margin-bottom: 20px;
 }
 .bw-pre-done-icon { font-size: 20px; }
@@ -220,8 +220,8 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   display: flex; align-items: center; justify-content: center; font-size: 20px;
 }
 .bw-post-strip-body { flex: 1; }
-.bw-post-strip-title { font-size: 13px; font-weight: 700; color: var(--blue-dark); margin-bottom: 2px; }
-.bw-post-strip-sub   { font-size: 13px; color: var(--blue); }
+.bw-post-strip-title { font-size: 15px; font-weight: 700; color: var(--blue-dark); margin-bottom: 2px; }
+.bw-post-strip-sub   { font-size: 14px; color: var(--blue); }
 .bw-post-strip-badge {
   font-size: 12px; font-weight: 600; color: var(--blue-dark);
   border: 2px dashed var(--blue-border); padding: 6px 14px;
@@ -295,7 +295,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-lb-rank { font-size: 14px; width: 26px; text-align: center; flex-shrink: 0; }
 .bw-lb-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
 .bw-lb-name  { flex: 1; font-size: 13px; font-weight: 600; color: var(--gray-900); display: flex; align-items: center; gap: 6px; }
-.bw-lb-you   { font-size: 10px; font-weight: 700; background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); padding: 1px 6px; border-radius: 4px; }
+.bw-lb-you   { font-size: 10px; font-weight: 700; background: var(--green); color: var(--green); border: 1px solid var(--green-border); padding: 1px 6px; border-radius: 4px; }
 .bw-lb-bar   { width: 48px; height: 6px; border-radius: 999px; background: var(--gray-100); overflow: hidden; }
 .bw-lb-fill  { height: 100%; border-radius: 999px; }
 .bw-lb-xp    { font-size: 13px; font-weight: 600; color: var(--gray-700); font-family: var(--mono); }
@@ -321,8 +321,8 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-how-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 36px; }
 .bw-how-card { background: #fff; border: 2px solid var(--gray-200); border-radius: var(--radius); padding: 16px 14px; text-align: center; }
 .bw-how-icon { width: 44px; height: 44px; border-radius: 12px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
-.bw-how-title { font-size: 13px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
-.bw-how-desc  { font-size: 13px; color: var(--gray-700); line-height: 1.55; }
+.bw-how-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+.bw-how-desc  { font-size: 14px; color: var(--gray-700); line-height: 1.55; }
 
 /* ── LOGIN PAGE ──────────────────────────────────────── */
 .bw-auth-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--gray-50); padding: 40px 20px; }

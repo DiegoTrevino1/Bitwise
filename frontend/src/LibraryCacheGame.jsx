@@ -373,8 +373,13 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
                 key={c.id}
                 className="lcg-mode-card"
                 style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
-                onClick={() => { 
-                startMode(c.id);
+                onClick={() => {
+                  if (c.id === "direct") {
+                    setPendingMode("direct");
+                    setPhase("difficulty");
+                  } else {
+                    startMode(c.id);
+                  }
                 }}
               >
                 <div className="lcg-mc-label">{c.label}</div>
@@ -440,7 +445,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
       <div className="lcg-topbar">
         <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
         <div className="lcg-topbar-center">
-          <span className="lcg-topbar-mode" style={{ color: cfg.color }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
+          <span className="lcg-topbar-mode" style={{ color: cfg.colorBorder }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
           <div className="lcg-progress-track">
             <div className="lcg-progress-fill" style={{ width: `${(qIdx / questions.length) * 100}%`, background: cfg.color }} />
           </div>
