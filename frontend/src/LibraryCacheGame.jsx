@@ -229,7 +229,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
     const bad = feedback === "wrong"   && sel;
     const ans = feedback === "wrong"   && correctLine === lineIdx && !selectedMiss;
     return (
-      <button
+      <div
         key={lineIdx}
         className={`lcg-cache-row lcg-cache-row-btn ${sel ? "lcg-row-selected" : ""} ${ok ? "lcg-row-correct" : ""} ${bad ? "lcg-row-wrong" : ""} ${ans ? "lcg-row-answer" : ""}`}
         onClick={() => feedback === null && onSelectLine(lineIdx, null)}
@@ -257,7 +257,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
               );
             })}
           </div>
-      </button>
+      </div>
     );
   };
 
