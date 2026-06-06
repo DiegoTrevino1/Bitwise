@@ -221,55 +221,60 @@ export const MODE_INSTRUCTIONS = {
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The amount of bytes per line tells you how many offset bits are needed."],
+        ["The amount of bytes per cache line tells you how many offset bits are needed. (2 bytes per line -> 1 offset bit, 4 bytes per line -> 2 offset bits, etc.)"],
       ]},
     ],
     [
       "Extract the ", { badge: "index", text: "index" }, " bits.",
       { sub: [
-        ["Determined by the number of lines in the cache."],
-        ["Take index value modulo the number of cache lines to get the target line."],
+        ["Determined by the memory of the system."],
+        ["Take index value modulo the number of cache lines to get the", {strong: " target line."}],
       ]},
     ],
     [
       "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
     ],
-    ["Compare the address ", { badge: "tag", text: "tag" }, " to the stored tag on that line."],
+    ["Compare the address ", { badge: "tag", text: "tag" }, " to the stored tag on the target line in the cache table."],
     ["Tags match → ", { strong: "cache hit" }, ". Click the correct byte in that row."],
-    ["Tags differ → click ", { strong: "Cache miss" }, "."],
+    ["Tags differ, data is not in the cache → click ", { strong: "Cache miss" }, "."],
   ],
   set: [
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The amount of bytes per line tells you how many offset bits are needed."],
+        ["The amount of bytes per cache line tells you how many offset bits are needed. (2 bytes per line -> 1 offset bit, 4 bytes per line -> 2 offset bits, etc.)"],
       ]},
     ],
     [
       "Extract the ", { badge: "set", text: "set" }, " bits.",
       { sub: [
-        ["The number of sets tells you how many set bits are needed."],
+        ["The number of sets tells you how many set bits are needed. (2 sets -> 1 set bit, 4 sets -> 2 set bits, etc.)"],
+        ["The set bits tell you which set of lines to look at."]
       ]},
     ],
     [
       "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
     ],
-    ["Check every line in that set for a matching ", { badge: "tag", text: "tag" }, "."],
-    ["A tag matches → ", { strong: "cache hit" }, ". Click that line."],
-    ["No tag matches → click ", { strong: "Cache miss" }, "."],
+    ["Check every line in the identified set for a matching ", { badge: "tag", text: "tag" }, "."],
+    ["A tag matches-> ", { strong: "cache hit" }, ". Click that line."],
+    ["No tag matches, data is not loaded in the cache -> click ", { strong: "Cache miss" }, "."],
   ],
   associative: [
     [
       "Extract the ", { badge: "offset", text: "offset" }, " bits.",
       { sub: [
-        ["The amount of bytes per line tells you how many offset bits are needed."],
+        ["The amount of bytes per cache line tells you how many offset bits are needed. (2 bytes per line -> 1 offset bit, 4 bytes per line -> 2 offset bits, etc.)"],
       ]},
     ],
     [
       "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
     ],
     ["Scan ", { strong: "every" }, " cache line for a matching ", { badge: "tag", text: "tag" }, "."],
-    ["A tag matches → ", { strong: "cache hit" }, ". Click that line."],
-    ["No tag matches anywhere → click ", { strong: "Cache miss" }, "."],
+    ["A tag matches → ", { strong: "cache hit" }, ". Click that line.", 
+      { sub: [
+        ["Select the Byte within the line using the ", { badge: "offset", text: "offset" }, " bits."],
+      ]},
+    ],
+    ["No tag matches anywhere, data is not loaded in the cache → click ", { strong: "Cache miss" }, "."],
   ],
 };

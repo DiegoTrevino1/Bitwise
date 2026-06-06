@@ -486,7 +486,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
                 </div>
               </div>
             )}
-            {cfg.hideAddressLabels && cfg.mode === "direct" && (
+            {cfg.mode === "direct" && (
               <div className="lcg-decoded-rows">
                 <div className="lcg-decoded-row">
                   <span>The memory size requires there to be {cfg.indexBits} index bits.</span>
