@@ -4,7 +4,6 @@ export const MODE_DESCRIPTIONS = {
     label: "Fully Associative",
     tag: "Mode 1 · Beginner",
     color: "#8b5cf6", colorLight: "#f5f3ff", colorBorder: "#c4b5fd", colorDark: "#4c1d95",
-    maxXp: 100,
     desc: "Memory can go in any cache line — no index or set bits. Every tag must be compared. Miss only when no tags match.",
     bits: [
       { part: "tag", role: "Compare ALL lines — miss if no stored tag matches" },
@@ -16,7 +15,6 @@ export const MODE_DESCRIPTIONS = {
     label: "Direct Mapping",
     tag: "Mode 2 · Intermediate",
     color: "#22c55e", colorLight: "#f0fdf4", colorBorder: "#86efac", colorDark: "#14532d",
-    maxXp: 200,
     desc: "Each memory address maps to exactly one cache line. Index bits locate the line; tag bits verify the data is correct.",
     bits: [
       { part: "tag", role: "Verify correct data is loaded — miss if tags don't match" },
@@ -29,7 +27,6 @@ export const MODE_DESCRIPTIONS = {
     label: "Set-Associative",
     tag: "Mode 3 · Advanced",
     color: "#f59e0b", colorLight: "#fffbeb", colorBorder: "#fbbf24", colorDark: "#78350f",
-    maxXp: 300,
     desc: "Cache is split into sets. Set bits identify which set this address belongs to. Data can go in any line within that set.",
     bits: [
       { part: "tag", role: "Identify which row within the set — miss if no tags match" },
