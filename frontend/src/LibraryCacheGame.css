@@ -3,7 +3,7 @@
 .lcg-shell { font-family: 'Outfit', system-ui, sans-serif; min-height: 100vh; background: #f9fafb; display: flex; flex-direction: column; }
 
 .lcg-topbar { display: flex; align-items: center; gap: 12px; padding: 0 clamp(16px, 4vw, 80px); height: 60px; background: #fff; border-bottom: 2px solid #e5e7eb; flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
-.lcg-back-btn, .lcg-home-btn { padding: 7px 16px; border-radius: 999px; border: 2px solid #e5e7eb; background: #fff; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+.lcg-back-btn, .lcg-home-btn { padding: 7px 16px; border-radius: 999px; border: 2px solid #9ca3af; background: #fff; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; transition: all .15s; flex-shrink: 0; }
 .lcg-back-btn:hover, .lcg-home-btn:hover { border-color: #d1d5db; color: #1f2937; }
 .lcg-topbar-title { font-size: 14px; font-weight: 500; color: #1f2937; flex-shrink: 0; }
 .lcg-topbar-center { flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; }
