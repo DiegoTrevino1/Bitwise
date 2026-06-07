@@ -244,7 +244,7 @@ export default function App() {
         <div className="bw-hero">
           <div>
             <h1>Learn cache mapping.<br />By actually doing it.</h1>
-            <p>Take a short pre-assessment, then play through three cache mapping modes — direct, set-associative, and fully associative. Retake the quiz after to see how much you learned.</p>
+            <p>Take a short pre-assessment, then play through three cache mapping modes — <b>direct</b>, <b>set-associative</b>, and <b>fully associative</b>. Retake the quiz after to see how much you learned.</p>
             <div className="bw-hero-btns">
               {!preDone
                 ? <button className="bw-btn-hero-white" onClick={() => isLoggedIn ? setView("pretest") : setView("auth")}>
@@ -323,7 +323,7 @@ export default function App() {
           <div className={`bw-step-num ${preDone ? "bw-step-num-active" : "bw-step-num-locked"}`}>2</div>
           <div className={`bw-step-label ${preDone ? "bw-step-label-active" : "bw-step-label-locked"}`}>
             Play the Game — Three Cache Mapping Modes
-            {preDone && <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400, marginLeft: 8 }}>Complete in order to unlock the next</span>}
+            {preDone && <span style={{ fontSize: 15, color: "#9ca3af", fontWeight: 400, marginLeft: 8 }}>Complete in order to unlock the next</span>}
           </div>
         </div>
 
@@ -473,19 +473,19 @@ export default function App() {
             {(preDone || postDone) && (
               <div className="bw-assess-row">
                 <div className="bw-assess-cell">
-                  <div className="bw-assess-lbl">📋 Pre-assessment</div>
+                  <div className="bw-assess-lbl">📋 Pre-Assessment</div>
                   <div className="bw-assess-val" style={{ color: "#f59e0b" }}>{preScore !== null ? `${preScore}/10` : "—"}</div>
                   <div className="bw-assess-sub">{preDone ? "Completed" : "Not taken"}</div>
                 </div>
                 <div className="bw-assess-cell" style={{ background: "#f9fafb" }}>
-                  <div className="bw-assess-lbl">🎮 Modes done</div>
+                  <div className="bw-assess-lbl">🎮 Modes Done</div>
                   <div className="bw-assess-val" style={{ color: "#8b5cf6" }}>
                     {Object.values(modeProgress).filter(m => m?.complete).length} / 3
                   </div>
                   <div className="bw-assess-sub">{totalXp > 0 ? `${fmtNum(totalXp)} XP total` : "Not started"}</div>
                 </div>
                 <div className="bw-assess-cell" style={{ opacity: postDone ? 1 : .5 }}>
-                  <div className="bw-assess-lbl">🏆 Post-assessment</div>
+                  <div className="bw-assess-lbl">🏆 Post-Assessment</div>
                   <div className="bw-assess-val" style={{ color: "#22c55e" }}>{postScore !== null ? `${postScore}/10` : "—"}</div>
                   <div className="bw-assess-sub">{postDone ? "Completed" : "Not yet unlocked"}</div>
                 </div>
@@ -547,7 +547,7 @@ export default function App() {
         <div className="bw-bottom-grid" id="bw-lb">
           <div>
             <div className="bw-section-head">
-              <div className="bw-section-title">Class leaderboard</div>
+              <div className="bw-section-title">Class Leaderboard</div>
               <div className="bw-section-sub">{stats ? `${fmtNum(stats.users || lbRows.length)} students` : ""}</div>
             </div>
             <div className="bw-panel">
@@ -578,7 +578,7 @@ export default function App() {
 
           <div>
             <div className="bw-section-head">
-              <div className="bw-section-title">Recent plays</div>
+              <div className="bw-section-title">Recent Plays</div>
             </div>
             <div className="bw-panel">
               <div className="bw-panel-head">

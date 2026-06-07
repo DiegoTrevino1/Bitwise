@@ -139,7 +139,7 @@
 .lcg-miss-wrong    { background: #fff1f2; border-color: #fecaca; color: #7f1d1d; }
 
 /* Instructions panel */
-.lcg-instructions { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; }
+.lcg-instructions { background: #f8fafc; border: 1.5px solid #9ca3af; border-radius: 12px; padding: 14px 16px; }
 .lcg-instructions-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 10px; }
 .lcg-instructions-steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .lcg-instructions-steps li { font-size: 13px; color: #475569; line-height: 1.5; }
