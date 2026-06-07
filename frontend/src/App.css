@@ -160,8 +160,8 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   border-radius: var(--radius); padding: 12px 18px; margin-bottom: 20px;
 }
 .bw-pre-done-icon { font-size: 20px; }
-.bw-pre-done-text { font-size: 13px; font-weight: 600; color: #14532d; }
-.bw-pre-done-sub  { font-size: 12px; color: #16a34a; }
+.bw-pre-done-text { font-size: 16px; font-weight: 600; color: #14532d; }
+.bw-pre-done-sub  { font-size: 15px; color: #16a34a; }
 
 /* ── MODE CARDS GRID ─────────────────────────────────── */
 .bw-mode-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
@@ -177,15 +177,15 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 
 .bw-mode-badge {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
   padding: 3px 10px; border-radius: 999px; border: 1.5px solid; margin-bottom: 10px;
 }
 .bw-mode-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.bw-mode-desc  { font-size: 13px; line-height: 1.55; margin-bottom: 14px; flex: 1; }
+.bw-mode-desc  { font-size: 14px; line-height: 1.55; margin-bottom: 14px; flex: 1; }
 .bw-mode-card > * {color: #000000;}
 
 .bw-mode-bits { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.bw-mode-bit-row { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; }
+.bw-mode-bit-row { display: flex; align-items: flex-start; gap: 7px; font-size: 13px; line-height: 1.5; }
 .bw-bit-badge {
   font-family: var(--mono); font-size: 10px; font-weight: 700;
   padding: 2px 7px; border-radius: 4px; border: 1px solid;
@@ -198,7 +198,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 
 .bw-mode-play-btn {
   width: 100%; padding: 10px; border-radius: 999px; border: none;
-  font-family: var(--sans); font-size: 13px; font-weight: 700;
+  font-family: var(--sans); font-size: 15px; font-weight: 700;
   color: #fff; cursor: pointer; transition: all .15s;
 }
 .bw-mode-play-btn:hover { filter: brightness(1.07); }
@@ -224,7 +224,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-post-strip-title { font-size: 15px; font-weight: 700; color: var(--blue-dark); margin-bottom: 2px; }
 .bw-post-strip-sub   { font-size: 14px; color: var(--blue); }
 .bw-post-strip-badge {
-  font-size: 12px; font-weight: 600; color: var(--blue-dark);
+  font-size: 13px; font-weight: 600; color: var(--blue-dark);
   border: 2px dashed var(--blue-border); padding: 6px 14px;
   border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; gap: 5px;
   white-space: nowrap;
@@ -323,7 +323,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-how-card { background: #fff; border: 2px solid var(--gray-200); border-radius: var(--radius); padding: 16px 14px; text-align: center; }
 .bw-how-icon { width: 44px; height: 44px; border-radius: 12px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .bw-how-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
-.bw-how-desc  { font-size: 14px; color: var(--gray-700); line-height: 1.55; }
+.bw-how-desc  { font-size: 15px; color: var(--gray-700); line-height: 1.55; }
 
 /* ── LOGIN PAGE ──────────────────────────────────────── */
 .bw-auth-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--gray-50); padding: 40px 20px; }

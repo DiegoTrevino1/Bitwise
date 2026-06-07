@@ -429,17 +429,17 @@ export default function App() {
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎮</div>
                 <div className="bw-stat-chip-val">{fmtNum(userPlays)}</div>
-                <div className="bw-stat-chip-lbl">Games played</div>
+                <div className="bw-stat-chip-lbl">Games Played</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">⭐</div>
                 <div className="bw-stat-chip-val">{fmtNum(totalXp)}</div>
-                <div className="bw-stat-chip-lbl">XP earned</div>
+                <div className="bw-stat-chip-lbl">XP Earned</div>
               </div>
               <div className="bw-stat-chip">
                 <div className="bw-stat-chip-icon">🎯</div>
                 <div className="bw-stat-chip-val">{userAccuracy != null ? `${Math.round(userAccuracy * 100)}%` : "—"}</div>
-                <div className="bw-stat-chip-lbl">Avg accuracy</div>
+                <div className="bw-stat-chip-lbl">Avg Accuracy</div>
               </div>
             </div>
 
@@ -512,11 +512,11 @@ export default function App() {
                         </div>
                         <div className="bw-mp-info">
                           <div className="bw-mp-title">{mode.label}</div>
-                          <div className="bw-mp-sub">{prog.plays || 0} plays · best score counts</div>
+                          <div className="bw-mp-sub">{prog.plays || 0} plays · Best Score Counts</div>
                         </div>
                         <div className="bw-mp-score">
                           <div className="bw-mp-xp" style={{ color: mode.color }}>{fmtNum(prog.bestXp || 0)} XP</div>
-                          <div className="bw-mp-xp-sub">best run</div>
+                          <div className="bw-mp-xp-sub">Best Run</div>
                         </div>
                       </div>
                       <div className="bw-mp-track">
@@ -524,7 +524,7 @@ export default function App() {
                       </div>
                       <div className="bw-mp-meta">
                         <span className="bw-mp-badge" style={{ background: mode.colorLight, color: mode.colorDark, borderColor: mode.colorBorder }}>
-                          🎯 {prog.accuracy != null ? `${Math.round(prog.accuracy * 100)}%` : "—"} accuracy
+                          🎯 {prog.accuracy != null ? `${Math.round(prog.accuracy * 100)}%` : "—"} Accuracy
                         </span>
                         {prog.complete && (
                           <span className="bw-mp-badge" style={{ background: "#f0fdf4", color: "#14532d", borderColor: "#86efac" }}>
