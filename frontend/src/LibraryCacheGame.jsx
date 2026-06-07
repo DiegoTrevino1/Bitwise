@@ -111,11 +111,15 @@ function generateQuestions(cfg, count = 10) {
             tagVal = randomBits(cfg.tagBits);
             tries += 1;
           } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
-          addr = tagVal + indexVal + offsetVal; 
+          addr = tagVal + indexVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
         }
         else {
-            explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
+          correctOffset = parseInt(offsetVal, 2);
+          correctLine = lineIdx;
+          explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
         }
         break; 
       case "set":
@@ -129,19 +133,24 @@ function generateQuestions(cfg, count = 10) {
         addr = tagVal + setVal + offsetVal;
         correctLine = lineIdx;
         correctOffset = parseInt(offsetVal, 2);
+        let lineInSet = lineIdx % cfg.waysPerSet;
 
         //if the question should be a miss, change the tag
         if(!isHit) {
           let tries = 0;
+          const setStart = setIdx * cfg.waysPerSet;
+          const setEnd = setStart + cfg.waysPerSet;
           do {
             tagVal = randomBits(cfg.tagBits);
             tries += 1;
-          } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
-          addr = tagVal + setVal + offsetVal; 
+          } while (tries < 10 && !cacheLines.slice(setStart, setEnd).some(l => l.tag === tagVal));
+          addr = tagVal + setVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = `Cache MISS. Set bits ${setVal} map to set ${setIdx}, but no line in that set has a matching tag. Select "Cache miss" to indicate a miss.`;
         }
         else {
-          explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineIdx} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
+          explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineInSet} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
         }
 
         break;
@@ -165,6 +174,8 @@ function generateQuestions(cfg, count = 10) {
             tries += 1;
           } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
           addr = tagVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = 'Cache MISS. No line has a matching tag. Select "Cache miss" to indicate a miss.';
         }
         else {
@@ -227,7 +238,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
     const sel = selRow;
     const ok  = feedback === "correct" && sel;
     const bad = feedback === "wrong"   && sel;
-    const ans = feedback === "wrong"   && correctLine === lineIdx && !selectedMiss;
+    const ans = feedback === "wrong"   && correctLine === lineIdx;
     return (
       <div
         key={lineIdx}
@@ -242,7 +253,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
         <div className="lcg-td lcg-td-offsets">
             {Array.from({ length: offsetCount }, (_, off) => {
               const isSel = selRow && selectedOffset === off;
-              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset && !selectedMiss;
+              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset;
               const isOk  = feedback === "correct" && isSel && selectedOffset === correctOffset;
               return (
                 <button
