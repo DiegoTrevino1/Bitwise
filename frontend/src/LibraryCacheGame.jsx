@@ -433,7 +433,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
   return (
     <div className="lcg-shell">
       <div className="lcg-topbar">
-        <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
+        <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Difficulty Select</button>
         <div className="lcg-topbar-center">
           <span className="lcg-topbar-mode" style={{ color: cfg.colorBorder }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
           <div className="lcg-progress-track">
