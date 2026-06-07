@@ -209,6 +209,14 @@
 .pa-opt-correct .pa-opt-icon { color: #16a34a; }
 .pa-opt-wrong   .pa-opt-icon { color: #dc2626; }
 
+/* "I don't know" option — visually separated from the real answers */
+.pa-opt-idk {
+  margin-top: 6px;
+  border-style: dashed;
+  opacity: 0.85;
+  font-style: italic;
+}
+
 /* ── EXPLANATION ──────────────────────────────────────── */
 .pa-explanation {
   margin: 0 22px 18px;
