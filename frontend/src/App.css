@@ -94,7 +94,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
 }
 .bw-hero h1 { font-size: clamp(22px, 1.9vw, 32px); font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 8px; letter-spacing: -0.02em; }
-.bw-hero p  { font-size: clamp(16px, 1vw, 15px); color: rgba(255,255,255,.85); line-height: 1.6; max-width: clamp(360px, 45%, 520px); }
+.bw-hero p  { font-size: clamp(16px, 1vw, 15px); color: rgb(255, 255, 255); line-height: 1.6; max-width: clamp(360px, 45%, 520px); }
 .bw-hero-btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 .bw-hero-icon { font-size: 72px; line-height: 1; flex-shrink: 0; opacity: .9; }
 .bw-btn-hero-white   { padding: 10px 22px; border-radius: 999px; background: #fff; border: none; color: var(--green); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; }
@@ -182,6 +182,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 }
 .bw-mode-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
 .bw-mode-desc  { font-size: 13px; line-height: 1.55; margin-bottom: 14px; flex: 1; }
+.bw-mode-card > * {color: #000000;}
 
 .bw-mode-bits { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .bw-mode-bit-row { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; }
