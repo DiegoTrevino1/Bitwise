@@ -9,11 +9,11 @@
   --green-border: #06a342;
   --yellow:       #f59e0b;
   --yellow-light: #fffbeb;
-  --yellow-border:#fbbb18;
+  --yellow-border:#fbbf24;
   --yellow-dark:  #78350f;
   --purple:       #8b5cf6;
   --purple-light: #f5f3ff;
-  --purple-border:#b8a8fa;
+  --purple-border:#c4b5fd;
   --purple-dark:  #4c1d95;
   --blue:         #3b82f6;
   --blue-light:   #eff6ff;
@@ -67,14 +67,14 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-nav-pill-streak { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .bw-nav-pill-xp     { background: #fefce8; border-color: var(--yellow-border); color: #92400e; }
 .bw-btn { padding: 8px 20px; border-radius: 999px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; border: 2px solid; transition: all .15s; }
-.bw-btn-outline  { background: #fff; border-color: var(--gray-400); color: var(--gray-500); }
+.bw-btn-outline  { background: #fff; border-color: var(--gray-200); color: var(--gray-500); }
 .bw-btn-outline:hover { border-color: var(--gray-300); color: var(--gray-800); }
-.bw-btn-primary  { background: var(--green);   border-color: var(--green-border); color: #fff; }
+.bw-btn-primary  { background: var(--green);   border-color: var(--green-dark); color: #fff; }
 .bw-btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .bw-user-pill {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 14px 4px 4px; border-radius: 999px;
-  border: 2px solid var(--gray-400); background: #fff; cursor: pointer;
+  border: 2px solid var(--gray-200); background: #fff; cursor: pointer;
 }
 .bw-user-pill:hover { border-color: var(--gray-300); }
 .bw-user-avatar {
@@ -97,9 +97,9 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-hero p  { font-size: clamp(16px, 1vw, 15px); color: rgba(255,255,255,.85); line-height: 1.6; max-width: clamp(360px, 45%, 520px); }
 .bw-hero-btns { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 .bw-hero-icon { font-size: 72px; line-height: 1; flex-shrink: 0; opacity: .9; }
-.bw-btn-hero-white   { padding: 10px 22px; border-radius: 999px; background: #fff; border: none; color: var(--green); font-family: var(--sans); font-size: 16px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.bw-btn-hero-white   { padding: 10px 22px; border-radius: 999px; background: #fff; border: none; color: var(--green); font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s; }
 .bw-btn-hero-white:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-.bw-btn-hero-outline { padding: 10px 22px; border-radius: 999px; background: transparent; border: 2px solid rgba(255,255,255,.55); color: #fff; font-family: var(--sans); font-size: 16px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.bw-btn-hero-outline { padding: 10px 22px; border-radius: 999px; background: transparent; border: 2px solid rgba(255,255,255,.55); color: #fff; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
 .bw-btn-hero-outline:hover { background: rgba(255,255,255,.12); }
 
 /* ── STAT CHIPS ──────────────────────────────────────── */
@@ -110,12 +110,12 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 }
 .bw-stat-chip-icon { font-size: clamp(22px, 2vw, 28px); margin-bottom: 6px; }
 .bw-stat-chip-val  { font-size: clamp(20px, 1.8vw, 28px); font-weight: 700; color: var(--gray-900); letter-spacing: -0.03em; }
-.bw-stat-chip-lbl  { font-size: 14px; color: var(--gray-400); font-weight: 500; margin-top: 2px; }
+.bw-stat-chip-lbl  { font-size: clamp(10px, 0.8vw, 13px); color: var(--gray-400); font-weight: 500; margin-top: 2px; }
 
 /* ── SECTION LABEL ───────────────────────────────────── */
 .bw-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .bw-section-title { font-size: 21px; font-weight: 700; color: var(--gray-900); }
-.bw-section-sub   { font-size: 16px; color: var(--gray-900); }
+/* .bw-section-sub   { font-size: 13px; color: var(--gray-500); } */
 
 /* ── STEP INDICATOR ──────────────────────────────────── */
 .bw-step-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; margin-top: 32px; }
@@ -160,8 +160,8 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   border-radius: var(--radius); padding: 12px 18px; margin-bottom: 20px;
 }
 .bw-pre-done-icon { font-size: 20px; }
-.bw-pre-done-text { font-size: 14px; font-weight: 600; color: #14532d; }
-.bw-pre-done-sub  { font-size: 14px; color: #16a34a; }
+.bw-pre-done-text { font-size: 13px; font-weight: 600; color: #14532d; }
+.bw-pre-done-sub  { font-size: 12px; color: #16a34a; }
 
 /* ── MODE CARDS GRID ─────────────────────────────────── */
 .bw-mode-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
@@ -181,23 +181,23 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
   padding: 3px 10px; border-radius: 999px; border: 1.5px solid; margin-bottom: 10px;
 }
 .bw-mode-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.bw-mode-desc  { font-size: 14px; line-height: 1.55; margin-bottom: 14px; flex: 1; }
+.bw-mode-desc  { font-size: 13px; line-height: 1.55; margin-bottom: 14px; flex: 1; }
 
 .bw-mode-bits { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.bw-mode-bit-row { display: flex; align-items: flex-start; gap: 7px; font-size: 13px; line-height: 1.5; }
+.bw-mode-bit-row { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; }
 .bw-bit-badge {
-  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
   padding: 2px 7px; border-radius: 4px; border: 1px solid;
   flex-shrink: 0; text-transform: uppercase; letter-spacing: .04em; margin-top: 1px;
 }
 .bw-bit-tag    { background: #fef9c3; color: #713f12; border-color: #fde047; }
 .bw-bit-index  { background: #dbeafe; color: #1e3a8a; border-color: #93c5fd; }
 .bw-bit-set    { background: #fce7f3; color: #831843; border-color: #f9a8d4; }
-.bw-bit-offset { background: #dcfce7; color: #14532d; border-color: #06a342; }
+.bw-bit-offset { background: #dcfce7; color: #14532d; border-color: #86efac; }
 
 .bw-mode-play-btn {
   width: 100%; padding: 10px; border-radius: 999px; border: none;
-  font-family: var(--sans); font-size: 15px; font-weight: 700;
+  font-family: var(--sans); font-size: 13px; font-weight: 700;
   color: #fff; cursor: pointer; transition: all .15s;
 }
 .bw-mode-play-btn:hover { filter: brightness(1.07); }
@@ -223,14 +223,14 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-post-strip-title { font-size: 15px; font-weight: 700; color: var(--blue-dark); margin-bottom: 2px; }
 .bw-post-strip-sub   { font-size: 14px; color: var(--blue); }
 .bw-post-strip-badge {
-  font-size: 13px; font-weight: 600; color: var(--blue-dark);
+  font-size: 12px; font-weight: 600; color: var(--blue-dark);
   border: 2px dashed var(--blue-border); padding: 6px 14px;
   border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; gap: 5px;
   white-space: nowrap;
 }
 
 /* ── PROGRESS SECTION ────────────────────────────────── */
-.bw-progress-title { font-size: 19px; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; }
+.bw-progress-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; }
 
 /* Assess comparison row */
 .bw-assess-row {
@@ -240,13 +240,13 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 }
 .bw-assess-cell { padding: 16px 14px; text-align: center; border-right: 1px solid var(--gray-100); }
 .bw-assess-cell:last-child { border-right: none; }
-.bw-assess-lbl  { font-size: 15px; font-weight: 600; color: var(--gray-500); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.bw-assess-lbl  { font-size: 12px; font-weight: 600; color: var(--gray-500); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 .bw-assess-val  { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
-.bw-assess-sub  { font-size: 14px; color: var(--gray-500); margin-top: 2px; }
+.bw-assess-sub  { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
 .bw-assess-improvement {
   display: flex; align-items: center; gap: 8px;
   background: var(--green-light); border-top: 1px solid var(--gray-100);
-  padding: 10px 16px; font-size: 15px; font-weight: 600; color: #15803d;
+  padding: 10px 16px; font-size: 13px; font-weight: 600; color: #15803d;
 }
 
 /* Mode progress card */
@@ -259,18 +259,18 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-mp-top  { display: flex; align-items: center; gap: 12px; margin-bottom: 9px; }
 .bw-mp-icon { width: 36px; height: 36px; border-radius: 10px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
 .bw-mp-info { flex: 1; }
-.bw-mp-title { font-size: 15px; font-weight: 700; color: var(--gray-900); }
-.bw-mp-sub   { font-size: 14px; color: var(--gray-500); }
+.bw-mp-title { font-size: 13px; font-weight: 700; color: var(--gray-900); }
+.bw-mp-sub   { font-size: 12px; color: var(--gray-500); }
 .bw-mp-score { text-align: right; }
 .bw-mp-xp    { font-size: 17px; font-weight: 700; }
-.bw-mp-xp-sub { font-size: 13px; color: var(--gray-500); }
+.bw-mp-xp-sub { font-size: 11px; color: var(--gray-500); }
 .bw-mp-track { height: 8px; background: var(--gray-100); border-radius: 999px; margin-bottom: 7px; overflow: hidden; }
 .bw-mp-fill  { height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.16,1,.3,1); }
 .bw-mp-meta  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.bw-mp-badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1.5px solid; display: flex; align-items: center; gap: 4px; }
+.bw-mp-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1.5px solid; display: flex; align-items: center; gap: 4px; }
 .bw-retry-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 14px; border-radius: 999px; border: 2px solid var(--gray-400);
+  padding: 5px 14px; border-radius: 999px; border: 2px solid var(--gray-200);
   background: #fff; font-family: var(--sans); font-size: 12px; font-weight: 600;
   color: var(--gray-500); cursor: pointer; transition: all .15s;
 }
@@ -319,7 +319,7 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 
 /* ── HOW IT WORKS ────────────────────────────────────── */
 .bw-how-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 36px; }
-.bw-how-card { background: #fff; border: 2px solid var(--gray-400); border-radius: var(--radius); padding: 16px 14px; text-align: center; }
+.bw-how-card { background: #fff; border: 2px solid var(--gray-200); border-radius: var(--radius); padding: 16px 14px; text-align: center; }
 .bw-how-icon { width: 44px; height: 44px; border-radius: 12px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .bw-how-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
 .bw-how-desc  { font-size: 14px; color: var(--gray-700); line-height: 1.55; }
@@ -357,11 +357,11 @@ body { font-family: var(--sans); font-size: 15px; line-height: 1.65; color: var(
 .bw-rank-num { font-size: 22px; font-weight: 700; color: #fff; line-height: 1; }
 .bw-rank-lbl { font-size: 10px; color: rgba(255,255,255,.8); font-weight: 700; margin-top: 2px; letter-spacing: .06em; }
 .bw-rank-text { flex: 1; }
-.bw-rank-title { font-size: 16px; font-weight: 700; color: var(--blue-dark); margin-bottom: 3px; }
-.bw-rank-sub   { font-size: 14px; color: var(--blue); }
+.bw-rank-title { font-size: 15px; font-weight: 700; color: var(--blue-dark); margin-bottom: 3px; }
+.bw-rank-sub   { font-size: 13px; color: var(--blue); }
 .bw-btn-keep-playing {
   padding: 9px 18px; border-radius: 999px; background: var(--blue); border: none;
-  color: #fff; font-family: var(--sans); font-size: 14px; font-weight: 700;
+  color: #fff; font-family: var(--sans); font-size: 13px; font-weight: 700;
   cursor: pointer; flex-shrink: 0; transition: all .15s;
 }
 .bw-btn-keep-playing:hover { filter: brightness(1.08); }

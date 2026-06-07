@@ -214,7 +214,7 @@ function AddressBits({ addr, cfg }) {
    CACHE TABLE
 ───────────────────────────────────────────────────────────── */
 
-function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLine, correctOffset, onSelectLine }) {
+function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLine, correctOffset, onSelectLine, selectedMiss }) {
   const offsetCount = Math.pow(2, cfg.offsetBits || 0);
   const renderRow = (lineIdx, label, sublabel) => {
     const entry = cacheSnapshot[lineIdx];
@@ -227,9 +227,9 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
     const sel = selRow;
     const ok  = feedback === "correct" && sel;
     const bad = feedback === "wrong"   && sel;
-    const ans = feedback === "wrong"   && correctLine === lineIdx;
+    const ans = feedback === "wrong"   && correctLine === lineIdx && !selectedMiss;
     return (
-      <button
+      <div
         key={lineIdx}
         className={`lcg-cache-row lcg-cache-row-btn ${sel ? "lcg-row-selected" : ""} ${ok ? "lcg-row-correct" : ""} ${bad ? "lcg-row-wrong" : ""} ${ans ? "lcg-row-answer" : ""}`}
         onClick={() => feedback === null && onSelectLine(lineIdx, null)}
@@ -242,7 +242,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
         <div className="lcg-td lcg-td-offsets">
             {Array.from({ length: offsetCount }, (_, off) => {
               const isSel = selRow && selectedOffset === off;
-              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset;
+              const isAns = feedback === "wrong" && rowAnswer && off === correctOffset && !selectedMiss;
               const isOk  = feedback === "correct" && isSel && selectedOffset === correctOffset;
               return (
                 <button
@@ -257,7 +257,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
               );
             })}
           </div>
-      </button>
+      </div>
     );
   };
 
@@ -325,15 +325,8 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
       if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
       return;
     }
-    if (cfg.mode === "direct") {
-      if (selectedLine === null || selectedOffset === null) return;
-      const isCorrect = q.correctLine === selectedLine && selectedOffset === q.correctOffset;
-      setFeedback(isCorrect ? "correct" : "wrong");
-      if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
-      return;
-    }
     if (selectedLine === null) return;
-    const isCorrect = q.correctLine === selectedLine;
+    const isCorrect = q.correctLine === selectedLine && q.correctOffset === selectedOffset;
     setFeedback(isCorrect ? "correct" : "wrong");
     if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
   };
@@ -493,7 +486,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
                 </div>
               </div>
             )}
-            {cfg.hideAddressLabels && cfg.mode === "direct" && (
+            {cfg.mode === "direct" && (
               <div className="lcg-decoded-rows">
                 <div className="lcg-decoded-row">
                   <span>The memory size requires there to be {cfg.indexBits} index bits.</span>
@@ -574,6 +567,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
             correctLine={q.correctLine}
             correctOffset={q.correctOffset}
             onSelectLine={(i, off) => { setSelectedLine(i); setSelectedOffset(off); }}
+            selectedMiss={selectedMiss}
           />
         </div>
       </div>
