@@ -370,7 +370,7 @@ export default function App() {
                       <span>
                         🔒 {played
                           ? `Score 80%+ in ${prevCfg?.label} to unlock — best: ${Math.round(prevAcc * 100)}%`
-                          : `Complete ${prevCfg?.label} first`}
+                          : `Complete ${prevCfg?.label ?? "the Pre-Assessment"} first`}
                       </span>
                       {played && (
                         <button
