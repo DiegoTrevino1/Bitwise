@@ -395,7 +395,7 @@ export default function App() {
             {postDone ? "✓" : "3"}
           </div>
           <div className={`bw-step-label ${postDone ? "bw-step-label-done" : "bw-step-label-locked"}`}>
-            Post-Assessment — {allModesComplete ? "Ready to Take!" : "Unlocks After Completing All Three Modes"}
+            Post-Assessment — {postDone ? "Complete!" : allModesComplete ? "Ready to Take!" : "Unlocks After Completing All Three Modes"}
           </div>
         </div>
 
