@@ -293,7 +293,7 @@ export default function App() {
             {preDone ? "✓" : "1"}
           </div>
           <div className={`bw-step-label ${preDone ? "bw-step-label-done" : "bw-step-label-active"}`}>
-            {preDone ? "Pre-assessment complete" : "Start Here — Take the Pre-Assessment"}
+            {preDone ? "Pre-assessment Complete!" : "Start Here — Take the Pre-Assessment"}
           </div>
         </div>
 
