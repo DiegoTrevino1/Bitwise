@@ -132,6 +132,7 @@ Bitwise/
 │       ├── LoginPage.jsx        # Login / Register form
 │       ├── LibraryCacheGame.jsx # Core cache-mapping game (all three modes + difficulties)
 │       ├── PreAssessment.jsx    # Pre and post assessment quiz
+│       ├── CacheTest.jsx        # Cache mapping reference / test view
 │       ├── GameConfigs.js       # Mode and difficulty configuration
 │       └── api.js               # fetch wrapper + token management (calls :4000/api)
 │
@@ -152,6 +153,8 @@ Bitwise/
         ├── middleware/
         │   ├── auth.js          # JWT bearer-token verification
         │   └── errors.js        # 404 + global error handler
+        ├── scripts/
+        │   └── seed.js          # Data seeding script
         └── utils/
             └── jwt.js           # sign / verify helpers
 ```
