@@ -72,15 +72,27 @@ Base prefix: `/api`. Protected routes require `Authorization: Bearer <token>`.
 
 ## Game modes & unlock rules
 
-The three cache mapping modes must be completed in order. Each mode unlocks only when the previous mode's best accuracy is **80% or above**:
+Each mode has three difficulties: Easy, Medium, and Hard. Progress is tracked per difficulty config ID.
 
-| Mode | ID            | Unlocks when                              |
-| ---- | ------------- | ----------------------------------------- |
-| 1    | `associative` | Pre-assessment complete                   |
-| 2    | `direct`      | Fully Associative best accuracy ≥ 80%     |
-| 3    | `set`         | Direct Mapping best accuracy ≥ 80%        |
+**Within a mode** — difficulties unlock sequentially at 80%+:
 
-The `accuracy` field on `/api/progress/me` stores the **best accuracy ever achieved** per mode (`$max`), so unlocks are permanent once earned.
+| Difficulty | Config ID example    | Unlocks when               |
+| ---------- | -------------------- | -------------------------- |
+| Easy       | `associativeEasy`    | Mode is unlocked           |
+| Medium     | `associativeMedium`  | Easy best accuracy ≥ 80%   |
+| Hard       | `associativeHard`    | Medium best accuracy ≥ 80% |
+
+**Between modes** — the next mode unlocks only when the previous mode's Hard difficulty reaches 80%+:
+
+| Mode                               | Unlocks when                      |
+| ---------------------------------- | --------------------------------- |
+| Fully Associative (`associative*`) | Pre-assessment complete           |
+| Direct Mapping (`direct*`)         | `associativeHard` accuracy ≥ 80%  |
+| Set-Associative (`set*`)           | `directHard` accuracy ≥ 80%       |
+
+The post-assessment unlocks when all three Hard difficulties have been completed at 80%+.
+
+The `accuracy` field on `/api/progress/me` stores the **best accuracy ever achieved** per config ID (`$max`), so unlocks are permanent once earned.
 
 ## MongoDB collections
 

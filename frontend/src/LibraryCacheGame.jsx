@@ -284,7 +284,22 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
    MAIN COMPONENT
 ───────────────────────────────────────────────────────────── */
 
-export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
+const DIFF_ORDER = ["Easy", "Medium", "Hard"];
+const getDiff = (configId) => DIFF_ORDER.find(d => configId.endsWith(d)) ?? null;
+const isDiffUnlocked = (configId, modeProgress) => {
+  const diff = getDiff(configId);
+  if (!diff || diff === "Easy") return true;
+  const base = configId.slice(0, configId.length - diff.length);
+  const prevDiff = DIFF_ORDER[DIFF_ORDER.indexOf(diff) - 1];
+  return (modeProgress?.[base + prevDiff]?.accuracy ?? 0) >= 0.8;
+};
+const prevDiffLabel = (configId) => {
+  const diff = getDiff(configId);
+  if (!diff || diff === "Easy") return null;
+  return DIFF_ORDER[DIFF_ORDER.indexOf(diff) - 1];
+};
+
+export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProgress = {} }) {
   const [activeMode,    setActiveMode]    = useState(null);
   const [pendingMode,   setPendingMode]   = useState(null);
   const [questions,     setQuestions]     = useState([]);
@@ -367,28 +382,38 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode }) {
             <p className="lcg-select-sub">Pick how challenging you want this session to be.</p>
           </div>
           <div className="lcg-mode-grid">
-            {Object.values(CONFIGS).filter((c) => !initialMode || c.mode === initialMode).map((c) => (
-              <button
-                key={c.id}
-                className="lcg-mode-card"
-                style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
-                onClick={() => { 
-                startMode(c.id);
-                }}
-              >
-                <div className="lcg-mc-label">{c.label}</div>
-                <p className="lcg-mc-desc">{c.description}</p>
-                <div className="lcg-mc-bits">
-                  {c.rules.map((r) => (
-                    <div key={r.part} className="lcg-mc-bit-row">
-                      <span className={`lcg-mc-badge lcg-mc-badge-${r.part}`}>{r.part}</span>
-                      <span className="lcg-mc-role">{r.role}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="lcg-mc-play">Play →</div>
-              </button>
-            ))}
+            {Object.values(CONFIGS).filter((c) => !initialMode || c.mode === initialMode).map((c) => {
+              const unlocked = isDiffUnlocked(c.id, modeProgress);
+              const bestAcc  = modeProgress[c.id]?.accuracy;
+              const prev     = prevDiffLabel(c.id);
+              return (
+                <button
+                  key={c.id}
+                  className={`lcg-mode-card${unlocked ? "" : " lcg-mode-card-locked"}`}
+                  style={{ "--mc": c.color, "--mcl": c.colorLight, "--mcb": c.colorBorder, "--mcd": c.colorDark }}
+                  onClick={() => { if (unlocked) startMode(c.id); }}
+                  disabled={!unlocked}
+                >
+                  <div className="lcg-mc-label">{c.label}</div>
+                  {unlocked && (modeProgress[c.id]?.plays ?? 0) > 0 && (
+                    <div className="lcg-mc-best">Best: {Math.round(bestAcc * 100)}%</div>
+                  )}
+                  {!unlocked && (
+                    <div className="lcg-mc-lock">🔒 Score 80%+ on {prev} first</div>
+                  )}
+                  <p className="lcg-mc-desc">{c.description}</p>
+                  <div className="lcg-mc-bits">
+                    {c.rules.map((r) => (
+                      <div key={r.part} className="lcg-mc-bit-row">
+                        <span className={`lcg-mc-badge lcg-mc-badge-${r.part}`}>{r.part}</span>
+                        <span className="lcg-mc-role">{r.role}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {unlocked && <div className="lcg-mc-play">Play →</div>}
+                </button>
+              );
+            })}
           </div>
           <div className="howto-panel">
             <InstructionsPanel mode={initialMode} />

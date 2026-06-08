@@ -1,7 +1,15 @@
 const { collections, ObjectId } = require('../db');
 
-const MODE_IDS    = ['direct', 'set', 'associative'];
-const MODE_LABELS = { direct: 'Direct Mapping', set: 'Set-Associative', associative: 'Fully Associative' };
+const MODE_IDS = [
+  'associativeEasy', 'associativeMedium', 'associativeHard',
+  'directEasy', 'directMedium', 'directHard',
+  'setEasy', 'setMedium', 'setHard',
+];
+const MODE_LABELS = {
+  associativeEasy: 'Fully Associative Easy', associativeMedium: 'Fully Associative Medium', associativeHard: 'Fully Associative Hard',
+  directEasy: 'Direct Mapping Easy', directMedium: 'Direct Mapping Medium', directHard: 'Direct Mapping Hard',
+  setEasy: 'Set-Associative Easy', setMedium: 'Set-Associative Medium', setHard: 'Set-Associative Hard',
+};
 
 async function record(req, res) {
   const { gameId, modeId, score, accuracy, xpEarned } = req.body || {};
@@ -9,7 +17,7 @@ async function record(req, res) {
   if (typeof gameId !== 'string' || !gameId)
     return res.status(400).json({ error: 'invalid gameId' });
   if (!MODE_IDS.includes(modeId))
-    return res.status(400).json({ error: 'modeId must be direct, set, or associative' });
+    return res.status(400).json({ error: 'invalid modeId' });
   if (!Number.isFinite(score) || score < 0)
     return res.status(400).json({ error: 'invalid score' });
   if (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 1)
@@ -60,14 +68,11 @@ async function summary(req, res) {
   const rank    = await users.countDocuments({ totalXp: { $gt: totalXp } }) + 1;
 
   const perMode = {};
-  for (const m of MODE_IDS) perMode[m] = { bestXp: 0, plays: 0, accuracy: 0, complete: false };
+  for (const id of MODE_IDS) perMode[id] = { bestXp: 0, plays: 0, accuracy: 0, complete: false };
   for (const r of modeAgg) {
-    perMode[r._id] = {
-      bestXp:   r.bestXp,
-      plays:    r.plays,
-      accuracy: Number(r.accuracy.toFixed(4)),
-      complete: true,
-    };
+    if (perMode[r._id] !== undefined) {
+      perMode[r._id] = { bestXp: r.bestXp, plays: r.plays, accuracy: Number(r.accuracy.toFixed(4)), complete: true };
+    }
   }
 
   return res.json({ totalXp, rank, totalUsers, perMode });

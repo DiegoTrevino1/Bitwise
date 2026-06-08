@@ -72,7 +72,7 @@ export default function App() {
 
   const preDone         = preScore  !== null;
   const postDone        = postScore !== null;
-  const allModesComplete = MODES.every(m => modeProgress[m.id]?.complete);
+  const allModesComplete = MODES.every(m => (modeProgress[m.id + "Hard"]?.accuracy ?? 0) >= 0.8);
 
   // User-specific stats derived from modeProgress
   const userPlays = Object.values(modeProgress).reduce((s, m) => s + (m.plays || 0), 0);
@@ -120,7 +120,7 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Mode unlock logic — previous mode must have best accuracy >= 80%
+  // Mode unlock logic — previous mode's Hard difficulty must be >= 80%
   const UNLOCK_THRESHOLD = 0.8;
   const prevModeId = (modeId) => {
     const idx = MODES.findIndex(m => m.id === modeId);
@@ -130,7 +130,7 @@ export default function App() {
     if (!preDone) return false;
     const prev = prevModeId(modeId);
     if (!prev) return true; // first mode always unlocked after pre-assessment
-    return (modeProgress[prev]?.accuracy ?? 0) >= UNLOCK_THRESHOLD;
+    return (modeProgress[prev + "Hard"]?.accuracy ?? 0) >= UNLOCK_THRESHOLD;
   };
 
   const handleGameFinish = async (modeId, score, accuracy) => {
@@ -179,8 +179,9 @@ export default function App() {
     return (
       <LibraryCacheGame
         initialMode={activeMode}
+        modeProgress={modeProgress}
         onBack={() => { setView("home"); setActiveMode(null); }}
-        onHome={() => { setView("home"); setActiveMode(null); }}
+        onHome={() => { loadUserData(); setView("home"); setActiveMode(null); }}
         onComplete={(score, accuracy) => handleGameFinish(activeMode, score, accuracy)}
       />
     );
@@ -252,7 +253,7 @@ export default function App() {
                     {isLoggedIn ? "Take pre-assessment →" : "Log in to start →"}
                   </button>
                 : <button className="bw-btn-hero-white" onClick={() => {
-                    const m = MODES.find(m => modeUnlocked(m.id) && !modeProgress[m.id]?.complete);
+                    const m = MODES.find(m => modeUnlocked(m.id) && (modeProgress[m.id + "Hard"]?.accuracy ?? 0) < UNLOCK_THRESHOLD);
                     if (m) { setActiveMode(m.id); setView("game"); }
                   }}>
                     {allModesComplete ? "Replay a mode →" : "Continue playing →"}
@@ -303,7 +304,7 @@ export default function App() {
             <div className="bw-pre-done-icon">✅</div>
             <div>
               <div className="bw-pre-done-text">Pre-assessment complete — {preScore}/10</div>
-              <div className="bw-pre-done-sub">Games are unlocked. Complete all three modes to unlock the post-assessment.</div>
+              <div className="bw-pre-done-sub">Games are unlocked. Score 80%+ on each mode's Hard difficulty to advance and unlock the post-assessment.</div>
             </div>
           </div>
         ) : (
@@ -331,8 +332,7 @@ export default function App() {
         <div className="bw-mode-grid">
           {MODES.map((mode) => {
             const unlocked = modeUnlocked(mode.id);
-            const prog     = modeProgress[mode.id];
-            const done     = !!prog?.complete;
+            const done     = (modeProgress[mode.id + "Hard"]?.accuracy ?? 0) >= UNLOCK_THRESHOLD;
             return (
               <div
                 key={mode.id}
@@ -344,7 +344,7 @@ export default function App() {
                 </div>
                 <div className="bw-mode-title" style={{ color: mode.colorDark }}>{mode.label}</div>
                 <div className="bw-mode-desc"  style={{ color: mode.colorDark, opacity: .75 }}>{mode.desc}</div>
-                
+
                 <div className="bw-mode-bits">
                   {mode.bits.map((r) => (
                     <div key={r.part} className="bw-mode-bit-row">
@@ -364,16 +364,17 @@ export default function App() {
                 ) : (() => {
                   const prev = prevModeId(mode.id);
                   const prevCfg = MODES.find(m => m.id === prev);
-                  const prevAcc = modeProgress[prev]?.accuracy ?? null;
-                  const played  = prevAcc !== null;
+                  const prevHardProg = modeProgress[prev + "Hard"];
+                  const hardAcc = prevHardProg?.accuracy ?? null;
+                  const hasPlayedHard = (prevHardProg?.plays ?? 0) > 0;
                   return (
                     <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color, flexDirection: "column", gap: 8 }}>
                       <span>
-                        🔒 {played
-                          ? `Score 80%+ in ${prevCfg?.label} to unlock — best: ${Math.round(prevAcc * 100)}%`
-                          : `Complete ${prevCfg?.label} first`}
+                        🔒 {hasPlayedHard
+                          ? `Score 80%+ on ${prevCfg?.label} Hard — best: ${Math.round(hardAcc * 100)}%`
+                          : `Complete ${prevCfg?.label} Hard to unlock`}
                       </span>
-                      {played && (
+                      {(modeProgress[prev + "Easy"]?.plays ?? 0) > 0 && (
                         <button
                           className="bw-mode-play-btn"
                           style={{ background: prevCfg?.color, fontSize: 12, padding: "7px 0" }}
@@ -415,7 +416,7 @@ export default function App() {
           {allModesComplete && !postDone
             ? <button className="bw-btn-pre" onClick={() => setView("posttest")}>Start →</button>
             : <div className="bw-post-strip-badge">
-                {postDone ? `+${postScore - preScore} improvement` : allModesComplete ? "Ready!" : `${Object.keys(modeProgress).filter(k => modeProgress[k]?.complete).length} of 3 done`}
+                {postDone ? `+${postScore - preScore} improvement` : allModesComplete ? "Ready!" : `${MODES.filter(m => (modeProgress[m.id + "Hard"]?.accuracy ?? 0) >= UNLOCK_THRESHOLD).length} of 3 done`}
               </div>
           }
         </div>

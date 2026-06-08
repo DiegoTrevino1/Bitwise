@@ -4,13 +4,107 @@ An interactive web app for learning cache memory mapping — built for CWU's Com
 
 ---
 
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18 or newer
+- npm
+- A MongoDB Atlas connection string (or local MongoDB instance)
+
+### 1 — Backend setup
+
+1. Navigate to the `backend/` folder:
+
+```bash
+cd backend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create `backend/.env` with the following values:
+
+```env
+PORT=4000
+JWT_SECRET=replace-me-with-a-long-random-string
+MONGODB_URI=your-mongodb-connection-string
+CORS_ORIGIN=http://localhost:5173
+```
+
+- `JWT_SECRET` must be a long, random string — keep it secret.
+- `MONGODB_URI` is your MongoDB Atlas connection string (or a local `mongodb://` URI).
+- `CORS_ORIGIN` must match the frontend dev server URL.
+
+4. Start the backend in development mode:
+
+```bash
+npm run dev
+```
+
+The backend starts on `http://localhost:4000` by default.
+
+5. Confirm it is running:
+
+```bash
+curl http://localhost:4000/api/health
+```
+
+Expected response:
+
+```json
+{ "ok": true }
+```
+
+### 2 — Frontend setup
+
+1. Open a second terminal and navigate to `frontend/`:
+
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the dev server:
+
+```bash
+npm run dev
+```
+
+The frontend starts on `http://localhost:5173`.
+
+### 3 — Open the app
+
+```
+http://localhost:5173
+```
+
+The frontend calls the backend at `http://localhost:4000/api`. Make sure both servers are running.
+
+### 4 — Common issues
+
+- **CORS errors** — verify `CORS_ORIGIN` in `backend/.env` exactly matches the frontend URL (including port).
+- **Backend won't start** — confirm `JWT_SECRET` and `MONGODB_URI` are set in `backend/.env` and that `npm install` completed without errors.
+- **Frontend can't reach the API** — check the browser console for network errors and confirm the backend is running on port 4000.
+- **Wrong Node version** — run `node -v` and confirm it is 18 or newer.
+
+---
+
 ## Features
 
-- **Three game modes** — Direct Mapping, Set-Associative, and Fully Associative, unlocked in sequence
-- **Pre/post assessments** — quiz before and after gameplay to track learning improvement
+- **Three game modes** — Fully Associative, Direct Mapping, and Set-Associative, each with Easy / Medium / Hard difficulties
+- **Progressive unlocking** — score 80%+ on a difficulty to unlock the next; score 80%+ on Hard to advance to the next mode
+- **Pre/post assessments** — quiz before and after gameplay to measure learning improvement
 - **XP & leaderboard** — score-based XP system with a live class leaderboard and activity feed
-- **User accounts** — register/login with JWT auth; progress is saved per user
-- **Graceful offline mode** — the UI works with dummy data when the backend isn't running
+- **User accounts** — register/login with JWT auth; all progress is saved per user in MongoDB
 
 ---
 
@@ -20,7 +114,7 @@ An interactive web app for learning cache memory mapping — built for CWU's Com
 |---|---|
 | Frontend | React 19, Vite 8 |
 | Backend | Node.js, Express 4 |
-| Database | SQLite via `better-sqlite3` |
+| Database | MongoDB (Atlas) |
 | Auth | JWT (`jsonwebtoken`) + bcrypt |
 | Styling | Plain CSS with a `bw-*` design system (Outfit + JetBrains Mono) |
 
@@ -33,32 +127,27 @@ Bitwise/
 ├── frontend/                    # Vite + React app
 │   └── src/
 │       ├── main.jsx             # React entry point
-│       ├── App.jsx              # Root component — routing between home/auth/game views
+│       ├── App.jsx              # Root component — routing, unlock logic, progress state
 │       ├── App.css              # Global design system (all bw-* classes)
 │       ├── LoginPage.jsx        # Login / Register form
-│       ├── LibraryCacheGame.jsx # Core cache-mapping game (all three modes)
-│       ├── NumberBaseDrill.jsx  # Number base conversion mini-game
-│       ├── SpellCounter.jsx     # Bit-counting mini-game
+│       ├── LibraryCacheGame.jsx # Core cache-mapping game (all three modes + difficulties)
+│       ├── PreAssessment.jsx    # Pre and post assessment quiz
+│       ├── GameConfigs.js       # Mode and difficulty configuration
 │       └── api.js               # fetch wrapper + token management (calls :4000/api)
 │
 └── backend/                     # Express REST API
     ├── server.js                # HTTP server entry point
     ├── .env                     # Local env vars (not committed)
-    ├── data/
-    │   ├── app.db               # SQLite database (auto-created on first run)
-    │   ├── questions.seed.json  # Question bank loaded into DB on startup
-    │   └── games.seed.json      # Game metadata seed
     └── src/
         ├── app.js               # Express app setup + route mounting
-        ├── config.js            # Env var validation (PORT, JWT_SECRET, DB_PATH, CORS_ORIGIN)
-        ├── db.js                # DB init, schema creation, auto-seeding, migrations
+        ├── config.js            # Env var validation (PORT, JWT_SECRET, MONGODB_URI, CORS_ORIGIN)
+        ├── db.js                # MongoDB connection
         ├── controllers/
-        │   ├── auth.controller.js         # register / login / /me
-        │   ├── progress.controller.js     # save play sessions, recent activity feed
+        │   ├── auth.controller.js         # register / login / me
+        │   ├── progress.controller.js     # save sessions, summary, recent activity
+        │   ├── assessment.controller.js   # pre/post assessment submission and results
         │   ├── leaderboard.controller.js  # ranked XP totals
-        │   ├── stats.controller.js        # aggregate plays / XP / accuracy
-        │   ├── questions.controller.js    # fetch questions by game + type
-        │   └── games.controller.js        # game catalog
+        │   └── stats.controller.js        # aggregate plays / XP / accuracy
         ├── routes/              # One router file per resource (mirrors controllers/)
         ├── middleware/
         │   ├── auth.js          # JWT bearer-token verification
@@ -66,19 +155,6 @@ Bitwise/
         └── utils/
             └── jwt.js           # sign / verify helpers
 ```
-
----
-
-## Database Schema
-
-```
-users          id, username (unique), password_hash, created_at
-play_sessions  id, user_id → users, game_id, score, accuracy, xp_earned, created_at
-questions      id, game_id, type, payload (JSON), sort_order, created_at
-games          id, title, tag, icon, color, description, badges, status, sort_order
-```
-
-The database is created automatically at `backend/data/app.db` on first run. Questions and game metadata are seeded from the JSON files in `backend/data/` if the tables are empty.
 
 ---
 
@@ -90,126 +166,13 @@ The database is created automatically at `backend/data/app.db` on first run. Que
 | POST | `/api/auth/register` | — | Create account → returns JWT |
 | POST | `/api/auth/login` | — | Login → returns JWT |
 | GET | `/api/auth/me` | ✓ | Current user info |
-| GET | `/api/games` | — | Game catalog |
-| GET | `/api/questions/:gameId/:type` | — | Questions for a game mode |
 | POST | `/api/progress` | ✓ | Save a play session |
+| GET | `/api/progress/me` | ✓ | Current user's progress across all modes |
 | GET | `/api/progress/recent?limit=N` | — | Recent activity feed |
 | GET | `/api/leaderboard?limit=N` | — | Top students by XP |
 | GET | `/api/stats/overview` | — | Aggregate plays / XP / accuracy |
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18 or newer
-- npm
-- A browser for the frontend (Chrome, Safari, Firefox, Edge)
-
-### 1 — Backend setup
-
-1. Open a terminal and make sure your current working directory is the `backend/` folder:
-
-```bash
-cd backend
-```
-
-2. Install backend dependencies from inside `backend/`:
-
-```bash
-npm install
-```
-
-3. Create `backend/.env` with these values:
-
-```env
-PORT=4000
-JWT_SECRET=replace-me-with-a-long-random-string
-DB_PATH=./data/app.db
-CORS_ORIGIN=http://localhost:5173
-```
-
-- `JWT_SECRET` must be a long random string.
-- `DB_PATH` points to the local SQLite file.
-- `CORS_ORIGIN` should match the frontend dev server URL.
-
-4. Start the backend server in development mode:
-
-```bash
-npm run dev
-```
-
-The backend will start on `http://localhost:4000` by default.
-
-5. Confirm the backend is healthy:
-
-```bash
-curl http://localhost:4000/api/health
-```
-
-You should see:
-
-```json
-{ "ok": true }
-```
-
-> If the server does not start, check that `JWT_SECRET` is set in `backend/.env` and that `node_modules/` is installed.
-
-### 2 — Frontend setup
-
-1. Open a second terminal and make sure your current working directory is the `frontend/` folder:
-
-```bash
-cd frontend
-```
-
-2. Install frontend dependencies from inside `frontend/`:
-
-```bash
-npm install
-```
-
-3. Start the frontend dev server:
-
-```bash
-npm run dev
-```
-
-The frontend will start on `http://localhost:5173`.
-
-### 3 — Open the application
-
-Open your browser at:
-
-```bash
-http://localhost:5173
-```
-
-The frontend is configured to call the backend API at:
-
-```bash
-http://localhost:4000/api
-```
-
-### 4 — Verify end-to-end
-
-- Backend: `http://localhost:4000/api/health`
-- Frontend: `http://localhost:5173`
-
-If the backend is not running, the UI will still display placeholder leaderboard and activity cards, but real account/login and progress features will not work.
-
-### 5 — Common issues
-
-- If `npm install` fails, confirm your Node version with:
-
-```bash
-node -v
-```
-
-- If the backend reports CORS errors, verify `CORS_ORIGIN` in `backend/.env` matches the frontend URL.
-
-- If the frontend cannot contact the API, make sure both servers are running and check the browser console for network errors.
+| POST | `/api/assessment` | ✓ | Submit pre or post assessment score |
+| GET | `/api/assessment/me` | ✓ | Current user's assessment results |
 
 ---
 
@@ -219,7 +182,6 @@ node -v
 |---|---|---|
 | `backend/` | `npm run dev` | Start backend with hot-reload (nodemon) |
 | `backend/` | `npm start` | Start backend (production) |
-| `backend/` | `npm run seed` | Re-seed questions and games from JSON files |
 | `frontend/` | `npm run dev` | Start Vite dev server |
 | `frontend/` | `npm run build` | Production build → `frontend/dist/` |
 | `frontend/` | `npm run preview` | Preview production build locally |
