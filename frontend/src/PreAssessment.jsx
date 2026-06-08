@@ -180,18 +180,17 @@ export default function PreAssessment({ type = "pre", onComplete, onBack }) {
   };
 
   const handleNext = async () => {
-    if (qIdx + 1 >= total) {
-      const finalAnswers = [...answers, selected === q.answer];
-      const score = finalAnswers.filter(Boolean).length;
-      // Save to backend (non-blocking — works offline too)
-      await submitAssessment(type, score, total);
-      onComplete(score);
-    } else {
-      setQIdx(i => i + 1);
-      setSelected(null);
-      setRevealed(false);
-    }
-  };
+  if (qIdx + 1 >= total) {
+    const score = Math.min(answers.filter(Boolean).length, total);
+
+    await submitAssessment(type, score, total);
+    onComplete(score);
+  } else {
+    setQIdx(i => i + 1);
+    setSelected(null);
+    setRevealed(false);
+  }
+};
 
   const isCorrect = revealed && selected === q.answer;
   const isWrong   = revealed && selected !== q.answer;
@@ -244,6 +243,29 @@ export default function PreAssessment({ type = "pre", onComplete, onBack }) {
                 </button>
               );
             })}
+
+            {/* "I don't know" option — pre-assessment only, always marked wrong */}
+            {isPre && (() => {
+              const idk = q.opts.length; // index beyond the real options
+              let cls = "pa-option pa-opt-idk";
+              if (revealed) {
+                if (selected === idk) cls += " pa-opt-wrong";
+              } else if (selected === idk) {
+                cls += " pa-opt-selected";
+              }
+              return (
+                <button
+                  key="idk"
+                  className={cls}
+                  onClick={() => handleSelect(idk)}
+                  disabled={revealed}
+                >
+                  <span className="pa-opt-letter">{String.fromCharCode(65 + q.opts.length)}</span>
+                  <span className="pa-opt-text">I don&apos;t know</span>
+                  {revealed && selected === idk && <span className="pa-opt-icon">✗</span>}
+                </button>
+              );
+            })()}
           </div>
 
           {/* Explanation */}

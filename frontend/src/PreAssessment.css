@@ -170,7 +170,7 @@
 }
 
 .pa-opt-correct {
-  border-color: #86efac;
+  border-color: #3dae66;
   background: #f0fdf4;
   color: #14532d;
 }
@@ -209,6 +209,14 @@
 .pa-opt-correct .pa-opt-icon { color: #16a34a; }
 .pa-opt-wrong   .pa-opt-icon { color: #dc2626; }
 
+/* "I don't know" option — visually separated from the real answers */
+.pa-opt-idk {
+  margin-top: 6px;
+  border-style: dashed;
+  opacity: 0.85;
+  font-style: italic;
+}
+
 /* ── EXPLANATION ──────────────────────────────────────── */
 .pa-explanation {
   margin: 0 22px 18px;
@@ -216,7 +224,7 @@
   padding: 14px 16px;
   border: 2px solid;
 }
-.pa-expl-correct { background: #f0fdf4; border-color: #86efac; }
+.pa-expl-correct { background: #f0fdf4; border-color: #3dae66; }
 .pa-expl-wrong   { background: #fef2f2; border-color: #fca5a5; }
 
 .pa-expl-title {
@@ -261,7 +269,7 @@
 }
 .pa-btn-confirm:not(:disabled):hover { filter: brightness(1.07); transform: translateY(-1px); }
 
-.pa-btn-next { background: #58cc02; }
+.pa-btn-next { background: #50b702; }
 .pa-btn-next:hover { filter: brightness(1.07); transform: translateY(-1px); }
 
 /* ── WHY CALLOUT ──────────────────────────────────────── */

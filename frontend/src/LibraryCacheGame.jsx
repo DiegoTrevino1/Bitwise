@@ -104,7 +104,6 @@ function generateQuestions(cfg, count = 10) {
         correctOffset = parseInt(offsetVal, 2);
         correctLine = lineIdx;
 
-        console.log(`Question ${i+1}: Line: ${lineIdx}, Initial tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, isHit: ${isHit}, addr: ${addr}`);
         //if the question should be a miss, change the tag so they don't match
         if (!isHit) {
           let tries = 0;
@@ -112,12 +111,15 @@ function generateQuestions(cfg, count = 10) {
             tagVal = randomBits(cfg.tagBits);
             tries += 1;
           } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
-          addr = tagVal + indexVal + offsetVal; 
-          console.log(`new tagVal: ${tagVal}, new addr: ${addr}`);
+          addr = tagVal + indexVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
         }
         else {
-            explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
+          correctOffset = parseInt(offsetVal, 2);
+          correctLine = lineIdx;
+          explanation = `Cache HIT. Index bits ${indexVal} = line ${lineIdx}. The stored tag ${tagVal} matches, Offset bit ${offsetVal} matches byte ${parseInt(offsetVal, 2)}`;
         }
         break; 
       case "set":
@@ -131,19 +133,24 @@ function generateQuestions(cfg, count = 10) {
         addr = tagVal + setVal + offsetVal;
         correctLine = lineIdx;
         correctOffset = parseInt(offsetVal, 2);
+        let lineInSet = lineIdx % cfg.waysPerSet;
 
         //if the question should be a miss, change the tag
         if(!isHit) {
           let tries = 0;
+          const setStart = setIdx * cfg.waysPerSet;
+          const setEnd = setStart + cfg.waysPerSet;
           do {
             tagVal = randomBits(cfg.tagBits);
             tries += 1;
-          } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
-          addr = tagVal + setVal + offsetVal; 
+          } while (tries < 10 && !cacheLines.slice(setStart, setEnd).some(l => l.tag === tagVal));
+          addr = tagVal + setVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = `Cache MISS. Set bits ${setVal} map to set ${setIdx}, but no line in that set has a matching tag. Select "Cache miss" to indicate a miss.`;
         }
         else {
-          explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineIdx} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
+          explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineInSet} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
         }
 
         break;
@@ -167,6 +174,8 @@ function generateQuestions(cfg, count = 10) {
             tries += 1;
           } while (tagVal === cacheLines[lineIdx].tag && tries < 10);
           addr = tagVal + offsetVal;
+          correctLine = null;
+          correctOffset = null;
           explanation = 'Cache MISS. No line has a matching tag. Select "Cache miss" to indicate a miss.';
         }
         else {
@@ -174,6 +183,8 @@ function generateQuestions(cfg, count = 10) {
         }
         break;
     }
+    //if the user is a test account, print the question details for debugging
+    console.log(`Question ${i+1}: isHit: ${isHit} Line: ${lineIdx}, offset: ${parseInt(offsetVal, 2)}, tagVal: ${tagVal}, stored tag: ${cacheLines[lineIdx].tag}, addr: ${addr}`);
     questions[i] = {addr, tagVal, setVal, indexVal, offsetVal, correctLine, correctOffset, isHit, explanation, cacheSnapshot: cacheLines.map(l => ({ ...l }))};
   }
   return questions;
@@ -214,7 +225,7 @@ function AddressBits({ addr, cfg }) {
    CACHE TABLE
 ───────────────────────────────────────────────────────────── */
 
-function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLine, correctOffset, onSelectLine }) {
+function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback, correctLine, correctOffset, onSelectLine, selectedMiss }) {
   const offsetCount = Math.pow(2, cfg.offsetBits || 0);
   const renderRow = (lineIdx, label, sublabel) => {
     const entry = cacheSnapshot[lineIdx];
@@ -229,7 +240,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
     const bad = feedback === "wrong"   && sel;
     const ans = feedback === "wrong"   && correctLine === lineIdx;
     return (
-      <button
+      <div
         key={lineIdx}
         className={`lcg-cache-row lcg-cache-row-btn ${sel ? "lcg-row-selected" : ""} ${ok ? "lcg-row-correct" : ""} ${bad ? "lcg-row-wrong" : ""} ${ans ? "lcg-row-answer" : ""}`}
         onClick={() => feedback === null && onSelectLine(lineIdx, null)}
@@ -257,7 +268,7 @@ function CacheTable({ cfg, cacheSnapshot, selectedLine, selectedOffset, feedback
               );
             })}
           </div>
-      </button>
+      </div>
     );
   };
 
@@ -340,23 +351,15 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
       if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
       return;
     }
-    if (cfg.mode === "direct") {
-      console.log("Submition: selectedLine: ", selectedLine, "selectedOffset: ", selectedOffset, "correctLine: ", q.correctLine, "correctOffset: ", q.correctOffset);
-      if (selectedLine === null || selectedOffset === null) return;
-      const isCorrect = q.correctLine === selectedLine && selectedOffset === q.correctOffset;
-      setFeedback(isCorrect ? "correct" : "wrong");
-      if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
-      return;
-    }
     if (selectedLine === null) return;
-    const isCorrect = q.correctLine === selectedLine;
+    const isCorrect = q.correctLine === selectedLine && q.correctOffset === selectedOffset;
     setFeedback(isCorrect ? "correct" : "wrong");
     if (isCorrect) { setScore((s) => s + 100); setCorrectCount((c) => c + 1); }
   };
 
   const handleNext = () => {
     if (qIdx + 1 >= questions.length) {
-      postProgress({ gameId: "cache", modeId: cfg.id, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
+      postProgress({ gameId: "cache", modeId: cfg.mode, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
       setPhase("summary");
     } else {
       setQIdx((i) => i + 1);
@@ -447,7 +450,6 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
             </div>
             <div className="lcg-summary-actions">
               <button className="lcg-btn-retry" onClick={retry}>↺ Retry this mode</button>
-              <button className="lcg-btn-modes" onClick={() => setPhase("select")}>All modes</button>
               <button className="lcg-btn-home"  onClick={onHome}>Home</button>
             </div>
           </div>
@@ -462,9 +464,9 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
   return (
     <div className="lcg-shell">
       <div className="lcg-topbar">
-        <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Modes</button>
+        <button className="lcg-back-btn" onClick={() => setPhase("select")}>← Difficulty Select</button>
         <div className="lcg-topbar-center">
-          <span className="lcg-topbar-mode" style={{ color: cfg.color }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
+          <span className="lcg-topbar-mode" style={{ color: cfg.colorBorder }}>{cfg.label}{cfg.difficultyLabel ? ` · ${cfg.difficultyLabel}` : ""}</span>
           <div className="lcg-progress-track">
             <div className="lcg-progress-fill" style={{ width: `${(qIdx / questions.length) * 100}%`, background: cfg.color }} />
           </div>
@@ -515,7 +517,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
                 </div>
               </div>
             )}
-            {cfg.hideAddressLabels && cfg.mode === "direct" && (
+            {cfg.mode === "direct" && (
               <div className="lcg-decoded-rows">
                 <div className="lcg-decoded-row">
                   <span>The memory size requires there to be {cfg.indexBits} index bits.</span>
@@ -596,6 +598,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
             correctLine={q.correctLine}
             correctOffset={q.correctOffset}
             onSelectLine={(i, off) => { setSelectedLine(i); setSelectedOffset(off); }}
+            selectedMiss={selectedMiss}
           />
         </div>
       </div>
