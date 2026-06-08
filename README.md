@@ -5,6 +5,7 @@ An interactive web app for learning cache memory mapping — built for CWU's Com
 ---
 
 ## Getting Started
+Use this link https://bitwise-uad2.vercel.app/ to access the project without running on your own machine or follow the instructions below to run on your machine.
 
 ### Prerequisites
 
