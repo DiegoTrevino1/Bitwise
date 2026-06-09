@@ -119,6 +119,12 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  useEffect(() => {
+    if (view !== "home") return;
+    const id = setInterval(() => loadAll(), 20000);
+    return () => clearInterval(id);
+  }, [view, loadAll]);
+
   // Mode unlock logic — previous mode's Hard difficulty must be >= 80%
   const UNLOCK_THRESHOLD = 0.8;
   const prevModeId = (modeId) => {
