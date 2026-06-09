@@ -359,7 +359,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
 
   const handleNext = () => {
     if (qIdx + 1 >= questions.length) {
-      postProgress({ gameId: "cache", modeId: cfg.mode, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
+      postProgress({ gameId: "cache", modeId: cfg.id, score, accuracy: correctCount / questions.length, xpEarned: score }).catch(() => {});
       setPhase("summary");
     } else {
       setQIdx((i) => i + 1);
