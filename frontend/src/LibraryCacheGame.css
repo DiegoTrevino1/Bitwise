@@ -136,9 +136,8 @@
 .lcg-offset-answer  { background: #f0fdf4; border-color: #47a201; }
 
 /* Cache miss button */
-.lcg-miss-btn { margin-top: 12px; width: 100%; padding: 14px 12px; border-radius: 12px; border: 2px dashed #d1d5db; background: #f9fafb; color: #374151; cursor: pointer; font-weight: 700; font-size: 15px; transition: border-color .15s, background .15s; }
-.lcg-miss-btn:hover { border-color: #9ca3af; background: #f3f4f6; }
-.lcg-miss-selected { background: #fff7ed; border-color: #fcd34d; color: #92400e; }
+.lcg-miss-btn { margin-top: 12px; width: 100%; padding: 14px 12px; border-radius: 12px; border: 2px dashed #d1d5db; background: #f9fafb; color: #374151; cursor: pointer; font-weight: 700; font-size: 15px; }
+.lcg-miss-selected { background: #1f2937; border-color: #1f2937; border-style: solid; color: #fff; }
 .lcg-miss-answer   { background: #f0fdf4; border-color: #06a342; color: #14532d; }
 .lcg-miss-wrong    { background: #fff1f2; border-color: #fecaca; color: #7f1d1d; }
 
