@@ -235,7 +235,11 @@ export const MODE_INSTRUCTIONS = {
       "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
     ],
     ["Compare the address ", { badge: "tag", text: "tag" }, " to the stored tag on the target line in the cache table."],
-    ["Tags match → ", { strong: "cache hit" }, ". Click the correct byte in that row."],
+    ["A tag matches → ", { strong: "cache hit" }, ". Click that line.", 
+      { sub: [
+        ["Select the Byte within the line using the ", { badge: "offset", text: "offset" }, " bits."],
+      ]},
+    ],
     ["Tags differ, data is not in the cache → click ", { strong: "Cache miss" }, "."],
   ],
   set: [
@@ -256,7 +260,11 @@ export const MODE_INSTRUCTIONS = {
       "The remaining bits are all ", { badge: "tag", text: "tag" }, " bits.",
     ],
     ["Check every line in the identified set for a matching ", { badge: "tag", text: "tag" }, "."],
-    ["A tag matches-> ", { strong: "cache hit" }, ". Click that line."],
+    ["A tag matches → ", { strong: "cache hit" }, ". Click that line.", 
+      { sub: [
+        ["Select the Byte within the line using the ", { badge: "offset", text: "offset" }, " bits."],
+      ]},
+    ],
     ["No tag matches, data is not loaded in the cache -> click ", { strong: "Cache miss" }, "."],
   ],
   associative: [
