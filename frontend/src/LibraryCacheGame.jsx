@@ -569,6 +569,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
             </div>
           )}
         </div>
+        
 
         {/* RIGHT: cache table + cache miss button */}
         <div className="lcg-right">
@@ -590,15 +591,13 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
             onSelectLine={(i, off) => { setSelectedLine(i); setSelectedOffset(off); }}
             selectedMiss={selectedMiss}
           />
-          {feedback === null && (
-            <button
-              type="button"
-              className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""}`}
-              onClick={() => { setSelectedMiss((s) => !s); setSelectedLine(null); setSelectedOffset(null); }}
-            >
-              Cache miss
-            </button>
-          )}
+          <button
+            type="button"
+            className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""} ${!q.isHit && feedback !== null ? "lcg-miss-answer" : ""} ${feedback === "wrong" && selectedMiss && q.isHit ? "lcg-miss-wrong" : ""}`}
+            onClick={() => { if (feedback === null) { setSelectedMiss((s) => !s); setSelectedLine(null); setSelectedOffset(null); } }}
+          >
+            Cache miss
+          </button>
         </div>
       </div>
     </div>
