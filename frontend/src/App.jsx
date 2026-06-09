@@ -369,11 +369,13 @@ export default function App() {
                   return (
                     <div className="bw-mode-lock-btn" style={{ borderColor: mode.colorBorder, color: mode.color, flexDirection: "column", gap: 8 }}>
                       <span>
-                        🔒 {hasPlayedHard
-                          ? `Score 80%+ on ${prevCfg?.label} Hard — best: ${Math.round(hardAcc * 100)}%`
-                          : `Complete ${prevCfg?.label} Hard to unlock`}
+                        🔒 {!prev
+                          ? "Complete the pre-assessment to unlock"
+                          : hasPlayedHard
+                            ? `Score 80%+ on ${prevCfg?.label} Hard — best: ${Math.round(hardAcc * 100)}%`
+                            : `Complete ${prevCfg?.label} Hard to unlock`}
                       </span>
-                      {(modeProgress[prev + "Easy"]?.plays ?? 0) > 0 && (
+                      {prev && (modeProgress[prev + "Easy"]?.plays ?? 0) > 0 && (
                         <button
                           className="bw-mode-play-btn"
                           style={{ background: prevCfg?.color, fontSize: 12, padding: "7px 0" }}

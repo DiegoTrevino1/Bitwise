@@ -114,7 +114,7 @@ function generateQuestions(cfg, count = 10) {
           addr = tagVal + indexVal + offsetVal;
           correctLine = null;
           correctOffset = null;
-          explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}. Select "Cache miss" to indicate a miss.`;
+          explanation = `Cache MISS. Index bits ${indexVal} map to line ${lineIdx}, but the stored tag (${cacheLines[lineIdx].tag}) does not match tag ${tagVal}.`;
         }
         else {
           correctOffset = parseInt(offsetVal, 2);
@@ -147,7 +147,7 @@ function generateQuestions(cfg, count = 10) {
           addr = tagVal + setVal + offsetVal;
           correctLine = null;
           correctOffset = null;
-          explanation = `Cache MISS. Set bits ${setVal} map to set ${setIdx}, but no line in that set has a matching tag. Select "Cache miss" to indicate a miss.`;
+          explanation = `Cache MISS. Set bits ${setVal} map to set ${setIdx}, but no line in that set has a matching tag.`;
         }
         else {
           explanation = `Cache HIT. Set bits ${setVal} = set ${setIdx}. Line ${lineInSet} within that set has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
@@ -176,7 +176,7 @@ function generateQuestions(cfg, count = 10) {
           addr = tagVal + offsetVal;
           correctLine = null;
           correctOffset = null;
-          explanation = 'Cache MISS. No line has a matching tag. Select "Cache miss" to indicate a miss.';
+          explanation = 'Cache MISS. No line has a matching tag.';
         }
         else {
           explanation = `Cache HIT. Line ${lineIdx} has a matching tag ${tagVal}. Offset bits ${offsetVal} match byte ${parseInt(offsetVal, 2)}.`;
@@ -534,27 +534,17 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
           </div>
 
           {feedback === null && (
-            <>
-              <button
-                className="lcg-submit-btn"
-                style={{ background: cfg.color }}
-                onClick={handleSubmit}
-                disabled={selectedMiss ? false : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null) : (selectedLine === null))}
-              >
-                {selectedMiss ? "Submit cache miss" : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null ? "← Select a line and byte in the cache table" : "Submit answer →") : (selectedLine === null ? "← Select a line in the cache table" : "Submit answer →"))}
-              </button>
-
-              <button
-                type="button"
-                className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""} ${!q.isHit && feedback !== null ? "lcg-miss-answer" : ""} ${feedback === "wrong" && selectedMiss && q.isHit ? "lcg-miss-wrong" : ""}`}
-                onClick={() => { if (feedback === null) { setSelectedMiss((s) => !s); setSelectedLine(null); setSelectedOffset(null); } }}
-              >
-                Cache miss
-              </button>
-            </>
+            <button
+              className="lcg-submit-btn"
+              style={{ background: cfg.color }}
+              onClick={handleSubmit}
+              disabled={selectedMiss ? false : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null) : (selectedLine === null))}
+            >
+              {selectedMiss ? "Submit cache miss" : (cfg.mode === "direct" ? (selectedLine === null || selectedOffset === null ? "→ Select a line and byte in the cache table" : "Submit answer →") : (selectedLine === null ? "→ Select a line in the cache table" : "Submit answer →"))}
+            </button>
           )}
 
-          <InstructionsPanel mode={cfg.mode} />
+          {feedback === null && <InstructionsPanel mode={cfg.mode} />}
 
           {feedback === "correct" && (
             <div className="lcg-feedback lcg-feedback-correct">
@@ -580,7 +570,7 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
           )}
         </div>
 
-        {/* RIGHT: cache table */}
+        {/* RIGHT: cache table + cache miss button */}
         <div className="lcg-right">
           <div className="lcg-cache-header">
             <span className="lcg-cache-title">Cache state</span>
@@ -600,6 +590,15 @@ export default function LibraryCacheGame({ onBack, onHome, initialMode, modeProg
             onSelectLine={(i, off) => { setSelectedLine(i); setSelectedOffset(off); }}
             selectedMiss={selectedMiss}
           />
+          {feedback === null && (
+            <button
+              type="button"
+              className={`lcg-miss-btn ${selectedMiss ? "lcg-miss-selected" : ""}`}
+              onClick={() => { setSelectedMiss((s) => !s); setSelectedLine(null); setSelectedOffset(null); }}
+            >
+              Cache miss
+            </button>
+          )}
         </div>
       </div>
     </div>
