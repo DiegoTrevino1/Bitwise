@@ -143,7 +143,12 @@ function generateQuestions(cfg, count = 10) {
           do {
             tagVal = randomBits(cfg.tagBits);
             tries += 1;
-          } while (tries < 10 && !cacheLines.slice(setStart, setEnd).some(l => l.tag === tagVal));
+            for (let j = setStart; j < setEnd; j++) {
+              if (cacheLines[j].tag === tagVal) {
+                tagVal = null;
+              }
+            }
+          } while (tries < 10 && tagVal === null);
           addr = tagVal + setVal + offsetVal;
           correctLine = null;
           correctOffset = null;
