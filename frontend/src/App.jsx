@@ -489,7 +489,7 @@ export default function App() {
                 <div className="bw-assess-cell" style={{ background: "#f9fafb" }}>
                   <div className="bw-assess-lbl">🎮 Modes Done</div>
                   <div className="bw-assess-val" style={{ color: "#8b5cf6" }}>
-                    {Object.values(modeProgress).filter(m => m?.complete).length} / 3
+                    {MODES.filter(m => (modeProgress[m.id + "Hard"]?.accuracy ?? 0) >= UNLOCK_THRESHOLD).length} / 3
                   </div>
                   <div className="bw-assess-sub">{totalXp > 0 ? `${fmtNum(totalXp)} XP total` : "Not started"}</div>
                 </div>
