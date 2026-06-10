@@ -27,7 +27,7 @@ cd backend
 npm install
 ```
 
-3. Create `backend/.env` with the following values:
+3. If there isn't one, create `backend/.env` with the following values:
 
 ```env
 PORT=4000
