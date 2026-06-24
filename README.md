@@ -11,7 +11,7 @@ Use this link https://bitwise-uad2.vercel.app/ to access the project without run
 
 - Node.js 18 or newer
 - npm
-- A MongoDB Atlas connection string (or local MongoDB instance)
+- A MongoDB Atlas connection string or local MongoDB instance (if .env is not already in backend folder)
 
 ### 1 — Backend setup
 
